@@ -49,18 +49,72 @@ export async function deployPropertyToken(params: {
         transactionId: result.transactionId,
       };
     } else {
-      // Server-side deployment - for now, return a mock response
-      // In production, you would need to properly configure server-side Hedera SDK
-      console.warn('Server-side token deployment not fully implemented. Using mock response.');
-      
-      // Generate a more realistic mock address
-      const mockAddress = "0x" + Math.random().toString(16).substring(2, 42).padStart(40, '0');
-      const mockTransactionId = "0x" + Math.random().toString(16).substring(2, 66).padStart(64, '0');
-      
+      // Server-side deployment using Hedera Asset Tokenization SDK
+      console.log('🚀 Deploying equity token from server...');
+
+      const { Equity, Network } = await import('@hashgraph/asset-tokenization-sdk');
+
+      // Get operator credentials
+      const operatorKey = process.env.NEXT_PUBLIC_HEDERA_OPERATOR_KEY;
+      if (!operatorKey) {
+        throw new Error('Missing operator key');
+      }
+
+      // Create wallet using StaticJsonRpcProvider
+      const provider = new ethers.providers.StaticJsonRpcProvider(
+        'https://testnet.hashio.io/api',
+        {
+          name: 'hedera-testnet',
+          chainId: 296,
+        }
+      );
+      const wallet = new ethers.Wallet(operatorKey, provider);
+
+      // Initialize Hedera Network
+      await Network.init({
+        network: 'testnet',
+        configuration: {
+          factoryAddress: process.env.NEXT_PUBLIC_FACTORY_ADDRESS!,
+          resolverAddress: process.env.NEXT_PUBLIC_RESOLVER_ADDRESS!,
+        },
+        mirrorNode: {
+          name: 'Hedera',
+          url: 'https://testnet.mirrornode.hedera.com/api/v1/',
+        },
+        rpcNode: {
+          name: 'Hashio',
+          url: 'https://testnet.hashio.io/api',
+        },
+      });
+
+      // Create equity token
+      const result = await Equity.create({
+        name: params.name,
+        symbol: params.symbol,
+        decimals: 0,
+        numberOfShares: params.totalShares.toString(),
+        nominalValue: params.pricePerShare.toString(),
+        currency: ethers.utils.formatBytes32String('USD'),
+        regulationType: 0,
+        regulationSubType: 0,
+        countries: '',
+        isCountryControlListWhiteList: false,
+        votingRight: true,
+        informationRight: true,
+        liquidationRight: true,
+        subscriptionRight: false,
+        conversionRight: false,
+        redemptionRight: false,
+        putRight: false,
+        dividendRight: true,
+      }, wallet);
+
+      console.log('✅ Equity token deployed:', result.payload.evmDiamondAddress);
+
       return {
-        tokenAddress: mockAddress,
-        evmTokenAddress: mockAddress,
-        transactionId: mockTransactionId,
+        tokenAddress: result.payload.diamondAddress,
+        evmTokenAddress: result.payload.evmDiamondAddress,
+        transactionId: result.transactionId,
       };
     }
   } catch (error) {

@@ -28,8 +28,11 @@ export async function initializeHederaSDK() {
 
   try {
     if (!Network) {
-      // Dynamic import
-      const module = await import('@hashgraph/asset-tokenization-sdk').catch(() => {
+      // Dynamic import to avoid webpack bundling issues
+      const module = await import(
+        /* webpackIgnore: true */
+        '@hashgraph/asset-tokenization-sdk'
+      ).catch(() => {
         console.warn('Asset Tokenization SDK not available, using fallback');
         return null;
       });
@@ -77,13 +80,32 @@ export async function deployPropertyToken(params: {
 }) {
   try {
     // Check if we're in a browser environment with MetaMask
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      throw new Error('MetaMask not detected. Please install MetaMask and connect your wallet.');
+    }
+
+    // Check if MetaMask is connected
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+    const accounts = await provider.listAccounts();
+
+    if (accounts.length === 0) {
+      throw new Error('Please connect your MetaMask wallet and try again.');
+    }
+
+    console.log('✅ MetaMask detected');
+    console.log('👛 Connected account:', accounts[0]);
+
+    // Initialize Hedera SDK
+    await initializeHederaSDK();
+
     if (typeof window !== 'undefined' && (window as any).ethereum) {
-      // Initialize Hedera SDK
-      await initializeHederaSDK();
 
       // Ensure Equity is loaded
       if (!Equity) {
-        const module = await import('@hashgraph/asset-tokenization-sdk').catch(() => null);
+        const module = await import(
+          /* webpackIgnore: true */
+          '@hashgraph/asset-tokenization-sdk'
+        ).catch(() => null);
 
         if (module) {
           Equity = module.Equity;
@@ -142,8 +164,6 @@ export async function deployPropertyToken(params: {
         evmTokenAddress: result.payload.evmDiamondAddress,
         transactionId: result.transactionId,
       };
-    } else {
-      throw new Error('MetaMask not available or not in browser environment');
     }
   } catch (error) {
     console.error('❌ Token deployment error:', error);

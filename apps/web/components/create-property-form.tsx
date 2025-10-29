@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Plus, X, Upload, CheckCircle, Building2, DollarSign, Leaf, ImageIcon, Trash2, Coins } from "lucide-react"
-import { deployPropertyToken, deployPropertySale, deployDividendDistributor } from "@/lib/hedera/realTokenDeployment";
 import { useAuth } from "@/context/auth-context"
 import { useHederaWallet } from "@/context/hedera-wallet-context"
 import { useWallet } from "@/context/wallet-context"
@@ -119,66 +118,11 @@ export function CreatePropertyForm() {
     console.log('🚀 Starting property creation...');
     console.log('📊 Wallet state:', { walletAccount, isAuthenticated, hederaConnected });
 
-    // Check if MetaMask wallet is connected
-    if (!walletAccount) {
-      alert('Please connect your MetaMask wallet first (click the wallet icon in the top right)');
-      setIsSubmitting(false);
-      return;
-    }
-
     setIsSubmitting(true)
     setSubmitStatus("idle")
 
     try {
-      // Check if wallet is connected
-      const { ethereum } = window as any;
-      if (!ethereum) {
-        alert('Please install MetaMask to create properties');
-        setIsSubmitting(false);
-        return;
-      }
-
-      console.log('✅ MetaMask detected');
-      console.log('👛 Connected account:', walletAccount);
-
-      // Verify we're on Hedera testnet
-      const provider = new (await import('ethers')).ethers.providers.Web3Provider(ethereum);
-      const network = await provider.getNetwork();
-
-      console.log('🌐 Current network:', network.chainId, network.name);
-
-      if (network.chainId !== 296) {
-        console.log('⚠️ Wrong network, switching to Hedera Testnet...');
-
-        try {
-          await ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x128' }], // Hedera testnet chain ID (296)
-          });
-        } catch (switchError: any) {
-          // Chain not added, add it
-          if (switchError.code === 4902) {
-            await ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: '0x128',
-                chainName: 'Hedera Testnet',
-                nativeCurrency: {
-                  name: 'HBAR',
-                  symbol: 'HBAR',
-                  decimals: 18
-                },
-                rpcUrls: ['https://testnet.hashio.io/api'],
-                blockExplorerUrls: ['https://hashscan.io/testnet']
-              }],
-            });
-          } else {
-            throw switchError;
-          }
-        }
-
-        console.log('✅ Switched to Hedera Testnet');
-      }
+      console.log('🚀 Creating property (contracts will be deployed on backend)...');
 
       // Upload images first if any
       let uploadedImageUrl = formData.imageUrl;
@@ -203,8 +147,8 @@ export function CreatePropertyForm() {
         }
       }
 
-      // Deploy real Hedera smart contracts
-      console.log('🚀 Starting contract deployments...');
+      // Deploy contracts from frontend using MetaMask
+      console.log('🚀 Starting contract deployments from frontend...');
       console.log('📋 Property details:', {
         title: formData.title,
         totalShares: formData.totalShares,
@@ -212,45 +156,59 @@ export function CreatePropertyForm() {
         pricePerShare: parseFloat(formData.totalValue) / parseInt(formData.totalShares)
       });
 
-      // 1. Deploy property token on Hedera
-      console.log('📝 Step 1/3: Deploying Property Token (ERC-1400)...');
-      console.log('⏳ MetaMask will popup - please approve transaction 1 of 3');
+      // Check if MetaMask is available
+      if (!walletProvider) {
+        throw new Error('Please connect your MetaMask wallet first');
+      }
 
-      const tokenDeployment = await deployPropertyToken({
-        name: formData.title,
-        symbol: formData.title.substring(0, 4).toUpperCase() + 'T',
-        totalShares: parseInt(formData.totalShares),
-        pricePerShare: parseFloat(formData.totalValue) / parseInt(formData.totalShares),
-      });
+      const { ethers } = await import('ethers');
+      const signer = walletProvider.getSigner();
 
-      console.log('✅ Token deployed successfully!');
-      console.log('📄 Token details:', tokenDeployment);
+      // Import contract ABIs
+      const PropertySaleABI = await import('@/lib/contracts/PropertySale.json');
+      const DividendDistributorABI = await import('@/lib/contracts/DividendDistributor.json');
 
-      // 2. Deploy sale contract
-      console.log('📝 Step 2/3: Deploying PropertySale Contract...');
-      console.log('⏳ MetaMask will popup - please approve transaction 2 of 3');
+      const pricePerShare = parseFloat(formData.totalValue) / parseInt(formData.totalShares);
+      const saleDuration = 30 * 24 * 60 * 60; // 30 days in seconds
 
-      const saleAddress = await deployPropertySale(
-        tokenDeployment.evmTokenAddress,
-        parseFloat(formData.totalValue) / parseInt(formData.totalShares),
-        parseInt(formData.totalShares)
+      // Deploy PropertySale contract
+      console.log('📝 Step 1/2: Deploying PropertySale Contract...');
+      const PropertySaleFactory = new ethers.ContractFactory(
+        PropertySaleABI.abi,
+        PropertySaleABI.bytecode,
+        signer
       );
 
-      console.log('✅ PropertySale deployed successfully!');
+      const propertySale = await PropertySaleFactory.deploy(
+        formData.tokenId,
+        ethers.utils.parseEther(pricePerShare.toString()),
+        parseInt(formData.totalShares),
+        saleDuration
+      );
+
+      await propertySale.deployed();
+      const saleAddress = propertySale.address;
+      console.log('✅ PropertySale deployed:', saleAddress);
+
+      // Deploy DividendDistributor contract
+      console.log('📝 Step 2/2: Deploying DividendDistributor Contract...');
+      const DividendDistributorFactory = new ethers.ContractFactory(
+        DividendDistributorABI.abi,
+        DividendDistributorABI.bytecode,
+        signer
+      );
+
+      const dividendDistributor = await DividendDistributorFactory.deploy(formData.tokenId);
+      await dividendDistributor.deployed();
+      const dividendAddress = dividendDistributor.address;
+      console.log('✅ DividendDistributor deployed:', dividendAddress);
+
+      const tokenAddress = formData.tokenId;
+
+      console.log('✅ All 3 contracts deployed successfully!');
+      console.log('📄 Token address:', tokenAddress);
       console.log('📄 Sale contract address:', saleAddress);
-
-      // 3. Deploy dividend distributor
-      console.log('📝 Step 3/3: Deploying DividendDistributor Contract...');
-      console.log('⏳ MetaMask will popup - please approve transaction 3 of 3');
-
-      const dividendAddress = await deployDividendDistributor(
-        tokenDeployment.evmTokenAddress
-      );
-
-      console.log('✅ DividendDistributor deployed successfully!');
       console.log('📄 Dividend contract address:', dividendAddress);
-
-      console.log('🎉 All 3 contracts deployed successfully!');
 
       // Call the API to create the property with real contract addresses
       const token = localStorage.getItem('hedera-auth-token');
@@ -266,7 +224,7 @@ export function CreatePropertyForm() {
           description: formData.description,
           totalShares: parseInt(formData.totalShares),
           pricePerShare: parseFloat(formData.totalValue) / parseInt(formData.totalShares),
-          tokenId: tokenDeployment.evmTokenAddress, // Real token address
+          tokenId: tokenAddress, // Real token address
           saleContractAddress: saleAddress, // Real sale contract address
           dividendContractAddress: dividendAddress, // Real dividend contract address
           type: formData.type,
@@ -341,7 +299,8 @@ export function CreatePropertyForm() {
     formData.location &&
     formData.type &&
     formData.totalValue &&
-    formData.totalShares
+    formData.totalShares &&
+    formData.tokenId
 
   if (submitStatus === "success") {
     return (
@@ -405,36 +364,26 @@ export function CreatePropertyForm() {
               <div className="p-2 bg-emerald-100 rounded-xl">
                 <Coins className="h-5 w-5 text-emerald-600" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800">Smart Contract Deployment</h3>
+              <h3 className="text-2xl font-bold text-slate-800">Equity Token</h3>
             </div>
-            <div className="rounded-2xl p-6 space-y-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-lg">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
-                <div className="space-y-2">
-                  <h4 className="text-lg font-bold text-blue-900">Automatic Contract Deployment</h4>
-                  <p className="text-sm text-blue-800 leading-relaxed">
-                    When you create this property, <strong>3 smart contracts</strong> will be automatically deployed to Hedera Testnet:
-                  </p>
-                  <ul className="text-sm text-blue-800 space-y-2 ml-4">
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">1.</span>
-                      <span><strong>Property Token (ERC-1400)</strong> - Tokenized shares with compliance features</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">2.</span>
-                      <span><strong>PropertySale Contract</strong> - Handles share purchases and payments</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold">3.</span>
-                      <span><strong>DividendDistributor Contract</strong> - Manages profit distribution to shareholders</span>
-                    </li>
-                  </ul>
-                  <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-300">
-                    <p className="text-sm text-blue-900 font-medium">
-                      ⚡ <strong>MetaMask will popup 3 times</strong> - please approve all transactions. Total cost: ~10 HBAR
-                    </p>
-                  </div>
-                </div>
+            <div className="rounded-2xl p-6 space-y-4 bg-white border-2 border-emerald-200">
+              <div className="space-y-3">
+                <Label htmlFor="tokenId" className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                  Equity Token ID *
+                  <Badge className="bg-emerald-600 text-white px-2 py-1 text-xs font-semibold">REQUIRED</Badge>
+                </Label>
+                <Input
+                  id="tokenId"
+                  value={formData.tokenId}
+                  onChange={(e) => handleInputChange("tokenId", e.target.value)}
+                  placeholder="Enter the Token ID of your Equity Token (e.g., 0x1234...)"
+                  required
+                  className="h-14 text-lg font-semibold border-2 border-emerald-300 rounded-xl focus:border-emerald-500 focus:ring-emerald-500 bg-white shadow-md placeholder:text-emerald-400 text-emerald-800"
+                />
+                <p className="text-sm text-emerald-700 font-medium bg-emerald-100 p-3 rounded-lg border border-emerald-200">
+                  💡 This Token ID must match an existing Equity Token created in the "Create Equity Token" tab.
+                  This links your property listing to the tokenized shares.
+                </p>
               </div>
             </div>
           </div>
