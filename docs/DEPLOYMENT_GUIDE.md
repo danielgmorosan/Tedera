@@ -1,264 +1,297 @@
-# Tedera Deployment Guide
+# 🚀 TEDERA - COMPLETE DEPLOYMENT GUIDE
 
-Complete guide to deploy and run the Tedera platform for the Hedera hackathon.
+## ✅ VERIFICATION: CONTRACTS ARE CONNECTED TO FRONTEND
 
-## Prerequisites
+### PropertySale Contract Integration
+**File**: `apps/web/hooks/use-property-purchase.ts`
+- ✅ Calls `buyShares(shares)` on PropertySale contract
+- ✅ Checks `saleActive()` before purchase
+- ✅ Validates available shares
+- ✅ Sends HBAR payment with transaction
+- ✅ Returns transaction hash
 
-- Node.js v18+ and npm
-- MongoDB running locally or connection string
-- Hedera testnet account with HBAR (get from [Hedera Portal](https://portal.hedera.com/))
-- Git
+**Frontend Component**: `apps/web/components/buy-panel.tsx`
+- ✅ Uses `usePropertyPurchase()` hook
+- ✅ Passes `saleContractAddress` from property
+- ✅ Saves transaction hash to database
+- ✅ Shows success/error states
 
-## Quick Start (5 Minutes)
+### DividendDistributor Contract Integration
+**File**: `apps/web/hooks/use-dividend-distribution.ts`
+- ✅ Calls `createDistribution()` on DividendDistributor contract
+- ✅ Sends HBAR payment for distribution
+- ✅ Returns transaction hash
+- ✅ Includes `claimDividend()` function for shareholders
 
-### 1. Install Dependencies
+**Frontend Component**: `apps/web/components/profit-distribution-panel.tsx`
+- ✅ Uses `useDividendDistribution()` hook
+- ✅ Fetches properties from database
+- ✅ Passes `dividendContractAddress` from property
+- ✅ Saves transaction hash to database
+- ✅ Shows success/error states
+
+---
+
+## 📋 PREREQUISITES
+
+### 1. MetaMask Wallet
+- Install MetaMask browser extension
+- Create or import a wallet
+- **IMPORTANT**: Save your seed phrase securely!
+
+### 2. Get Hedera Testnet HBAR
+**Option A: Hedera Faucet**
+1. Go to https://portal.hedera.com/
+2. Create a free account
+3. Go to "Testnet Access"
+4. Get your testnet account ID (format: 0.0.xxxxx)
+5. Fund your account with testnet HBAR
+
+**Option B: HashPack Wallet**
+1. Install HashPack extension
+2. Create wallet
+3. Switch to testnet
+4. Use built-in faucet
+
+### 3. Connect MetaMask to Hedera Testnet
+The app will automatically add Hedera testnet to MetaMask, but you can add it manually:
+
+**Network Details:**
+- Network Name: `Hedera Testnet`
+- RPC URL: `https://testnet.hashio.io/api`
+- Chain ID: `296` (hex: `0x128`)
+- Currency Symbol: `HBAR`
+- Block Explorer: `https://hashscan.io/testnet`
+
+---
+
+## 🏗️ STEP-BY-STEP DEPLOYMENT TO TESTNET
+
+### STEP 1: Environment Setup
+
+1. **Create `.env.local` file** in `apps/web/`:
+```bash
+cd apps/web
+cp .env.example .env.local
+```
+
+2. **Edit `.env.local`** with these values:
+```env
+# MongoDB (use MongoDB Atlas free tier)
+MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/tedera?retryWrites=true&w=majority
+
+# JWT Secret (generate a random string)
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Hedera Network Configuration
+NEXT_PUBLIC_HEDERA_NETWORK=testnet
+NEXT_PUBLIC_HEDERA_OPERATOR_ID=0.0.YOUR_ACCOUNT_ID
+NEXT_PUBLIC_HEDERA_OPERATOR_KEY=your-private-key-here
+
+# Hedera Asset Tokenization Studio Addresses (TESTNET)
+NEXT_PUBLIC_FACTORY_ADDRESS=0xcBF9225c4093a742C4A5A4152f296749Ad3490E7
+NEXT_PUBLIC_RESOLVER_ADDRESS=0xd89bDfF4826bcBbF493e6F27ce6974F02E3d15E3
+
+# Optional: File Upload (use Cloudinary or similar)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your-upload-preset
+```
+
+### STEP 2: MongoDB Setup (Free)
+
+1. Go to https://www.mongodb.com/cloud/atlas/register
+2. Create a free account
+3. Create a new cluster (M0 Free tier)
+4. Click "Connect" → "Connect your application"
+5. Copy the connection string
+6. Replace `<password>` with your database password
+7. Paste into `MONGODB_URI` in `.env.local`
+
+### STEP 3: Install Dependencies
 
 ```bash
+# From project root
 npm install
+
+# Install Hedera SDK dependencies
+cd apps/web
+npm install @hashgraph/sdk @hashgraph/asset-tokenization-sdk ethers@5
 ```
 
-### 2. Configure Web App
+### STEP 4: Compile Smart Contracts
 
 ```bash
-# Copy environment template
-cp apps/web/.env.local.example apps/web/.env.local
+# From project root
+cd packages/contracts
+npx hardhat compile
 
-# Edit the file and set:
-# - MONGO_URI (your MongoDB connection string)
-# - JWT_SECRET (random secret key)
+# Copy artifacts to web app
+mkdir -p ../../apps/web/lib/contracts
+cp artifacts/contracts/PropertySale.sol/PropertySale.json ../../apps/web/lib/contracts/
+cp artifacts/contracts/DividendDistributor.sol/DividendDistributor.json ../../apps/web/lib/contracts/
 ```
 
-The ATS contracts are already deployed:
-- Factory: `0xcBF9225c4093a742C4A5A4152f296749Ad3490E7`
-- Resolver: `0xd89bDfF4826bcBbF493e6F27ce6974F02E3d15E3`
-
-### 3. Start Web App
+### STEP 5: Start the Application
 
 ```bash
+# From project root
 npm run dev
 ```
 
-Visit http://localhost:3000
-
-**That's it!** The web app is now running with token creation functionality.
+The app will start on http://localhost:3000 (or 3001 if 3000 is in use)
 
 ---
 
-## Full Deployment (Optional - For PropertySale & DividendDistributor)
+## 🎯 USING THE APP ON TESTNET
 
-If you want to deploy the custom PropertySale and DividendDistributor contracts:
+### STEP 1: Connect Wallet
 
-### 1. Configure Contracts
+1. Go to http://localhost:3000
+2. Click "Connect Wallet" in the top right
+3. MetaMask will prompt you to:
+   - Connect your account
+   - Add Hedera Testnet network (if not already added)
+   - Switch to Hedera Testnet
+4. Approve all prompts
 
-```bash
-# Copy environment template
-cp packages/contracts/.env.example packages/contracts/.env
+### STEP 2: Create a Property (Admin)
 
-# Edit packages/contracts/.env and set:
-# - TESTNET_PRIVATE_KEY (your Hedera account private key)
+1. Go to http://localhost:3000/admin
+2. Click "Create New Property" tab
+3. Fill out the form:
+   - **Title**: "Solar Farm Texas"
+   - **Location**: "Austin, TX"
+   - **Type**: Solar
+   - **Description**: "100MW solar farm generating clean energy"
+   - **Total Value**: 5000000 (5 million)
+   - **Total Shares**: 10000
+   - **Expected Yield**: 8.5
+   - **Sustainability Score**: 95
+
+4. Click "Create Property"
+
+5. **Watch the console** for deployment progress:
+```
+Deploying Hedera smart contracts...
+Token deployed: { evmTokenAddress: '0x...', transactionId: '...' }
+Sale contract deployed: 0x...
+Dividend distributor deployed: 0x...
+Property created successfully!
 ```
 
-### 2. Compile Contracts
+6. **Verify on HashScan**:
+   - Copy each contract address
+   - Go to https://hashscan.io/testnet/contract/{address}
+   - Confirm contracts are deployed
 
-```bash
-npm run contracts:compile
-```
+### STEP 3: Buy Property Shares
 
-### 3. Deploy Contracts
+1. Go to http://localhost:3000
+2. Click on the property you just created
+3. In the "Buy Panel" on the right:
+   - Enter number of shares (e.g., 100)
+   - Click "Purchase"
+4. MetaMask will prompt for transaction approval
+5. Confirm the transaction
+6. Wait for success message with transaction hash
+7. **Verify on HashScan**: https://hashscan.io/testnet/transaction/{txHash}
 
-**Option A: Deploy with placeholder token address**
+### STEP 4: Distribute Dividends
 
-```bash
-cd packages/contracts
-npm run deploy:testnet
-```
+1. Go to http://localhost:3000/admin
+2. Click "Distribute Profits" tab
+3. Select the property
+4. Enter HBAR amount (e.g., 100)
+5. Click "Distribute Profits"
+6. MetaMask will prompt for transaction approval
+7. Confirm the transaction
+8. Wait for success message
+9. **Verify on HashScan**: Check the transaction
 
-**Option B: Deploy with specific token address**
+### STEP 5: Claim Dividends (Shareholders)
 
-First, create a property token via the web app, then:
+**Note**: The UI for claiming is not yet built, but the contract function exists.
 
-```bash
-cd packages/contracts
-TOKEN_ADDRESS=0x... npm run deploy:token
-```
-
-### 4. Update Web App
-
-After deployment, add the contract addresses to `apps/web/.env.local`:
-
-```bash
-NEXT_PUBLIC_PROPERTY_SALE_ADDRESS=0x...
-NEXT_PUBLIC_DIVIDEND_DISTRIBUTOR_ADDRESS=0x...
-```
-
-### 5. Restart Web App
-
-```bash
-npm run dev
-```
+To claim dividends, shareholders can:
+1. Use the `claimDividend(distributionId)` function
+2. Or wait for the claiming UI to be added
 
 ---
 
-## Project Structure
+## 🔍 VERIFICATION CHECKLIST
 
-```
-hedera-hackathon-sc/
-├── apps/
-│   └── web/                    # Next.js web application
-│       ├── app/                # App router pages
-│       ├── components/         # React components
-│       ├── lib/                # Utilities and Hedera integration
-│       └── .env.local          # Environment variables
-├── packages/
-│   └── contracts/              # Smart contracts
-│       ├── contracts/          # Solidity files (2 files)
-│       │   ├── PropertySale.sol
-│       │   └── DividendDistributor.sol
-│       ├── scripts/            # Deployment scripts
-│       └── .env                # Contract deployment config
-└── package.json                # Root workspace config
-```
+After deploying, verify everything works:
+
+- [ ] MetaMask connects to Hedera Testnet
+- [ ] Property creation deploys 3 contracts
+- [ ] All 3 contract addresses are saved to database
+- [ ] Contracts are visible on HashScan
+- [ ] Share purchase calls PropertySale.buyShares()
+- [ ] Purchase transaction appears on HashScan
+- [ ] Dividend distribution calls DividendDistributor.createDistribution()
+- [ ] Distribution transaction appears on HashScan
+- [ ] Transaction hashes are saved to database
 
 ---
 
-## What's Already Working
+## 🐛 TROUBLESHOOTING
 
-### ✅ Web Application
-- User authentication (JWT + Hedera wallet)
-- Property listing UI
-- Portfolio dashboard
-- Admin panel
-- MongoDB backend
+### Issue: "MetaMask not detected"
+**Solution**: Install MetaMask browser extension
 
-### ✅ Token Creation
-- Create property tokens via ATS SDK
-- ERC-1400 compliant security tokens
-- Country blacklisting (compliance)
-- Transfer restrictions
+### Issue: "Insufficient funds"
+**Solution**: Get testnet HBAR from Hedera portal or HashPack faucet
 
-### ✅ Smart Contracts (Compiled)
-- PropertySale.sol - Presale contract
-- DividendDistributor.sol - Dividend distribution
+### Issue: "Wrong network"
+**Solution**: Switch to Hedera Testnet in MetaMask (Chain ID 296)
 
----
+### Issue: "Contract deployment failed"
+**Solution**: 
+- Check you have enough testnet HBAR (need ~10 HBAR for gas)
+- Check console for specific error
+- Verify `.env.local` has correct values
 
-## Environment Variables Reference
+### Issue: "Transaction failed"
+**Solution**:
+- Check contract addresses are correct
+- Verify sale is active (PropertySale.saleActive = true)
+- Check you have enough HBAR for purchase
+- Look at error message in MetaMask
 
-### Web App (`apps/web/.env.local`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/hedera_asset_dev` |
-| `JWT_SECRET` | Secret for JWT tokens | `your-secret-key` |
-| `NEXT_PUBLIC_HEDERA_NETWORK` | Hedera network | `testnet` |
-| `NEXT_PUBLIC_FACTORY_ADDRESS` | ATS Factory address | `0xcBF9225c4093a742C4A5A4152f296749Ad3490E7` |
-| `NEXT_PUBLIC_RESOLVER_ADDRESS` | ATS Resolver address | `0xd89bDfF4826bcBbF493e6F27ce6974F02E3d15E3` |
-| `NEXT_PUBLIC_PROPERTY_SALE_ADDRESS` | PropertySale contract (optional) | `0x...` |
-| `NEXT_PUBLIC_DIVIDEND_DISTRIBUTOR_ADDRESS` | DividendDistributor contract (optional) | `0x...` |
-
-### Contracts (`packages/contracts/.env`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `TESTNET_PRIVATE_KEY` | Your Hedera private key | `0x...` |
-| `TESTNET_RPC_URL` | Hedera testnet RPC | `https://testnet.hashio.io/api` |
-| `TOKEN_ADDRESS` | Property token address | `0x...` |
-| `PRICE_PER_SHARE` | Price per share in wei | `1000000000000000000` (1 HBAR) |
-| `TOTAL_SHARES` | Total shares to sell | `1000` |
-| `SALE_DURATION` | Sale duration in seconds | `2592000` (30 days) |
+### Issue: "Database connection failed"
+**Solution**:
+- Verify MongoDB URI is correct
+- Check MongoDB Atlas allows connections from your IP
+- Ensure database user has read/write permissions
 
 ---
 
-## Testing
+## 📊 CONTRACT ADDRESSES ON TESTNET
 
-### Test Token Creation
+After deployment, your contracts will be at addresses like:
 
-1. Start web app: `npm run dev`
-2. Navigate to http://localhost:3000
-3. Connect Hedera wallet
-4. Create a new property
-5. Token will be created on Hedera testnet
+**Factory Contract (ATS)**: `0xcBF9225c4093a742C4A5A4152f296749Ad3490E7`
+**Resolver Contract (ATS)**: `0xd89bDfF4826bcBbF493e6F27ce6974F02E3d15E3`
 
-### Test Contract Deployment
+**Your Deployed Contracts** (will be different each time):
+- **Property Token (ATS)**: `0x...` (from Equity.create())
+- **PropertySale**: `0x...` (from deployPropertySale())
+- **DividendDistributor**: `0x...` (from deployDividendDistributor())
 
-```bash
-cd packages/contracts
-npm run compile
-npm run deploy:testnet
-```
-
-Check deployment on [HashScan Testnet](https://hashscan.io/testnet)
+All addresses are saved to the database and can be viewed in the property details.
 
 ---
 
-## Troubleshooting
+## 🎉 SUCCESS!
 
-### MongoDB Connection Error
+If you've completed all steps, you now have:
 
-```bash
-# Make sure MongoDB is running
-mongod --dbpath /path/to/data
-```
+1. ✅ A fully functional RWA marketplace on Hedera Testnet
+2. ✅ ERC-1400 compliant security tokens via ATS
+3. ✅ Working PropertySale contracts for share purchases
+4. ✅ Working DividendDistributor contracts for profit sharing
+5. ✅ Decentralized Identity (DID) for all users
+6. ✅ All transactions verifiable on HashScan
 
-Or use MongoDB Atlas (cloud):
-```
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/hedera_asset_dev
-```
-
-### Hedera Wallet Not Connecting
-
-- Make sure you have MetaMask or HashPack installed
-- Switch to Hedera testnet (Chain ID: 296)
-- Add Hedera testnet RPC: https://testnet.hashio.io/api
-
-### Contract Deployment Fails
-
-- Check you have HBAR in your testnet account
-- Verify TESTNET_PRIVATE_KEY is correct
-- Make sure contracts are compiled: `npm run contracts:compile`
-
-### Web App Build Errors
-
-```bash
-# Clean and reinstall
-npm run clean
-rm -rf node_modules package-lock.json
-npm install
-```
-
----
-
-## Deployment Addresses (Testnet)
-
-### ATS Infrastructure (Already Deployed)
-- **Factory Proxy**: `0xcBF9225c4093a742C4A5A4152f296749Ad3490E7`
-- **Resolver Proxy**: `0xd89bDfF4826bcBbF493e6F27ce6974F02E3d15E3`
-
-### Custom Contracts (Deploy These)
-- **PropertySale**: Deploy using `npm run deploy:testnet`
-- **DividendDistributor**: Deploy using `npm run deploy:testnet`
-
----
-
-## Next Steps
-
-1. ✅ **Start Web App** - `npm run dev`
-2. ✅ **Create Property Tokens** - Use the web UI
-3. ⏳ **Deploy Custom Contracts** - Optional, for presale/dividends
-4. ⏳ **Integrate Contracts** - Connect UI to deployed contracts
-5. ⏳ **Test End-to-End** - Complete user flow
-
----
-
-## Support
-
-- Hedera Documentation: https://docs.hedera.com
-- ATS SDK: https://github.com/hashgraph/asset-tokenization-studio
-- HashScan Explorer: https://hashscan.io/testnet
-
----
-
-## License
-
-Apache-2.0
+**Ready for hackathon demo!** 🚀
 
