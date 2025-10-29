@@ -28,11 +28,8 @@ export async function initializeHederaSDK() {
 
   try {
     if (!Network) {
-      // Dynamic import to avoid webpack bundling issues
-      const module = await import(
-        /* webpackIgnore: true */
-        '@hashgraph/asset-tokenization-sdk'
-      ).catch(() => {
+      // Dynamic import
+      const module = await import('@hashgraph/asset-tokenization-sdk').catch(() => {
         console.warn('Asset Tokenization SDK not available, using fallback');
         return null;
       });
@@ -86,10 +83,7 @@ export async function deployPropertyToken(params: {
 
       // Ensure Equity is loaded
       if (!Equity) {
-        const module = await import(
-          /* webpackIgnore: true */
-          '@hashgraph/asset-tokenization-sdk'
-        ).catch(() => null);
+        const module = await import('@hashgraph/asset-tokenization-sdk').catch(() => null);
 
         if (module) {
           Equity = module.Equity;
