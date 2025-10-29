@@ -1,27 +1,53 @@
 import { ethers } from 'ethers';
 
-// Dynamic import for Hedera SDK to avoid SSR issues
+// Dynamic imports to avoid SSR and webpack issues
+let PropertySaleArtifact: any = null;
+let DividendDistributorArtifact: any = null;
 let Network: any = null;
 let Equity: any = null;
 
 let sdkInitialized = false;
 
+async function loadArtifacts() {
+  if (!PropertySaleArtifact) {
+    PropertySaleArtifact = await import('../contracts/PropertySale.json');
+  }
+  if (!DividendDistributorArtifact) {
+    DividendDistributorArtifact = await import('../contracts/DividendDistributor.json');
+  }
+}
+
 export async function initializeHederaSDK() {
   if (sdkInitialized) return;
-  
+
   // Only initialize in browser environment
   if (typeof window === 'undefined') {
     console.warn('Hedera SDK initialization skipped on server side');
     return null;
   }
-  
+
   try {
     if (!Network) {
-      const module = await import('@hashgraph/asset-tokenization-sdk');
-      Network = module.Network;
-      Equity = module.Equity;
+      // Dynamic import to avoid webpack bundling issues
+      const module = await import(
+        /* webpackIgnore: true */
+        '@hashgraph/asset-tokenization-sdk'
+      ).catch(() => {
+        console.warn('Asset Tokenization SDK not available, using fallback');
+        return null;
+      });
+
+      if (module) {
+        Network = module.Network;
+        Equity = module.Equity;
+      }
     }
-    
+
+    if (!Network) {
+      console.warn('Hedera SDK not available');
+      return null;
+    }
+
     const supportedWallets = await Network.init({
       network: process.env.NEXT_PUBLIC_HEDERA_NETWORK as any,
       configuration: {
@@ -37,7 +63,7 @@ export async function initializeHederaSDK() {
         url: 'https://testnet.hashio.io/api',
       },
     });
-    
+
     sdkInitialized = true;
     return supportedWallets;
   } catch (error) {
@@ -57,18 +83,41 @@ export async function deployPropertyToken(params: {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       // Initialize Hedera SDK
       await initializeHederaSDK();
-      
+
       // Ensure Equity is loaded
       if (!Equity) {
-        const module = await import('@hashgraph/asset-tokenization-sdk');
-        Equity = module.Equity;
+        const module = await import(
+          /* webpackIgnore: true */
+          '@hashgraph/asset-tokenization-sdk'
+        ).catch(() => null);
+
+        if (module) {
+          Equity = module.Equity;
+        }
       }
-      
+
+      if (!Equity) {
+        throw new Error('Asset Tokenization SDK not available. Please check your installation.');
+      }
+
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
-      
-      console.log('Deploying property token with params:', params);
-      
+
+      // Get current account and network info
+      const address = await signer.getAddress();
+      const network = await provider.getNetwork();
+
+      console.log('🚀 Starting property token deployment...');
+      console.log('👛 Deploying from account:', address);
+      console.log('🌐 Network:', network.chainId, network.name);
+      console.log('📋 Params:', params);
+
+      if (network.chainId !== 296) {
+        throw new Error('Please switch to Hedera Testnet (Chain ID 296) in MetaMask');
+      }
+
+      console.log('⏳ MetaMask popup should appear - please approve the transaction...');
+
       // Use the Hedera Asset Tokenization SDK to create an equity token
       const result = await Equity.create({
         name: params.name,
@@ -90,9 +139,10 @@ export async function deployPropertyToken(params: {
         putRight: false,
         dividendRight: true,
       }, signer);
-      
-      console.log('Token deployment result:', result);
-      
+
+      console.log('✅ Token deployment successful!');
+      console.log('📄 Result:', result);
+
       return {
         tokenAddress: result.payload.diamondAddress,
         evmTokenAddress: result.payload.evmDiamondAddress,
@@ -102,7 +152,17 @@ export async function deployPropertyToken(params: {
       throw new Error('MetaMask not available or not in browser environment');
     }
   } catch (error) {
-    console.error('Token deployment error:', error);
+    console.error('❌ Token deployment error:', error);
+
+    // Provide more helpful error messages
+    if (error instanceof Error) {
+      if (error.message.includes('user rejected') || error.message.includes('User denied')) {
+        throw new Error('Transaction rejected by user in MetaMask');
+      } else if (error.message.includes('insufficient funds')) {
+        throw new Error('Insufficient HBAR balance. Please get testnet HBAR from portal.hedera.com');
+      }
+    }
+
     throw new Error(`Token deployment failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -114,88 +174,36 @@ export async function deployPropertySale(
 ) {
   try {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
+      // Load artifacts dynamically
+      await loadArtifacts();
+
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
-      
-      // Simple PropertySale contract ABI
-      const PropertySaleABI = [
-        "constructor(address _token, uint256 _pricePerShare, uint256 _totalShares)",
-        "function buyShares(uint256 shares) external payable",
-        "function saleActive() external view returns (bool)",
-        "function toggleSale() external",
-        "function withdrawFunds() external",
-      ];
-      
-      // Deploy PropertySale contract
+
+      console.log('Deploying PropertySale contract...');
+
+      // Use compiled artifact
       const PropertySaleFactory = new ethers.ContractFactory(
-        PropertySaleABI,
-        `// SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.18;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract PropertySale is Ownable {
-    IERC20 public propertyToken;
-    uint256 public pricePerShare; // in tinybars
-    uint256 public totalShares;
-    uint256 public sharesSold;
-    bool public saleActive;
-    
-    mapping(address => uint256) public purchased;
-    
-    event SharesPurchased(address indexed buyer, uint256 shares, uint256 amount);
-    event SaleStatusChanged(bool active);
-    
-    constructor(
-        address _token,
-        uint256 _pricePerShare,
-        uint256 _totalShares
-    ) {
-        propertyToken = IERC20(_token);
-        pricePerShare = _pricePerShare;
-        totalShares = _totalShares;
-        saleActive = true;
-    }
-    
-    function buyShares(uint256 shares) external payable {
-        require(saleActive, "Sale not active");
-        require(sharesSold + shares <= totalShares, "Not enough shares");
-        require(msg.value >= shares * pricePerShare, "Insufficient payment");
-        
-        sharesSold += shares;
-        purchased[msg.sender] += shares;
-        
-        require(
-            propertyToken.transfer(msg.sender, shares),
-            "Token transfer failed"
-        );
-        
-        emit SharesPurchased(msg.sender, shares, msg.value);
-    }
-    
-    function toggleSale() external onlyOwner {
-        saleActive = !saleActive;
-        emit SaleStatusChanged(saleActive);
-    }
-    
-    function withdrawFunds() external onlyOwner {
-        payable(owner()).transfer(address(this).balance);
-    }
-}`,
+        PropertySaleArtifact.abi,
+        PropertySaleArtifact.bytecode,
         signer
       );
-      
-      console.log('Deploying PropertySale contract...');
+
+      // Deploy with constructor parameters
+      // Constructor: (address _token, uint256 _pricePerShare, uint256 _totalShares, uint256 _saleDuration)
+      const saleDuration = 30 * 24 * 60 * 60; // 30 days in seconds
+      const priceInWei = ethers.utils.parseEther(pricePerShare.toString());
+
       const propertySale = await PropertySaleFactory.deploy(
         tokenAddress,
-        ethers.utils.parseEther(pricePerShare.toString()),
-        totalShares
+        priceInWei,
+        totalShares,
+        saleDuration
       );
-      
+
       await propertySale.deployed();
       console.log('PropertySale deployed to:', propertySale.address);
-      
+
       return propertySale.address;
     } else {
       throw new Error('MetaMask not available or not in browser environment');
@@ -209,74 +217,25 @@ contract PropertySale is Ownable {
 export async function deployDividendDistributor(tokenAddress: string) {
   try {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
+      // Load artifacts dynamically
+      await loadArtifacts();
+
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
-      
-      // Simple DividendDistributor contract ABI
-      const DividendDistributorABI = [
-        "constructor(address _token)",
-        "function distributeDividends() external payable",
-        "function claimDividends() external",
-        "function getClaimableDividends(address account) external view returns (uint256)",
-      ];
-      
-      // Deploy DividendDistributor contract
+
+      console.log('Deploying DividendDistributor contract...');
+
+      // Use compiled artifact
       const DividendDistributorFactory = new ethers.ContractFactory(
-        DividendDistributorABI,
-        `// SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.18;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract DividendDistributor is Ownable {
-    IERC20 public token;
-    mapping(address => uint256) public dividendsPerShare;
-    mapping(address => uint256) public lastClaimed;
-    
-    event DividendsDistributed(uint256 amount);
-    event DividendsClaimed(address indexed account, uint256 amount);
-    
-    constructor(address _token) {
-        token = IERC20(_token);
-    }
-    
-    function distributeDividends() external payable onlyOwner {
-        uint256 totalSupply = token.totalSupply();
-        require(totalSupply > 0, "No tokens in circulation");
-        
-        uint256 dividendPerShare = msg.value / totalSupply;
-        dividendsPerShare[address(this)] += dividendPerShare;
-        
-        emit DividendsDistributed(msg.value);
-    }
-    
-    function claimDividends() external {
-        uint256 claimable = getClaimableDividends(msg.sender);
-        require(claimable > 0, "No dividends to claim");
-        
-        lastClaimed[msg.sender] = dividendsPerShare[address(this)];
-        payable(msg.sender).transfer(claimable);
-        
-        emit DividendsClaimed(msg.sender, claimable);
-    }
-    
-    function getClaimableDividends(address account) external view returns (uint256) {
-        uint256 balance = token.balanceOf(account);
-        uint256 currentDividendsPerShare = dividendsPerShare[address(this)];
-        uint256 lastClaimedPerShare = lastClaimed[account];
-        
-        return balance * (currentDividendsPerShare - lastClaimedPerShare);
-    }
-}`,
+        DividendDistributorArtifact.abi,
+        DividendDistributorArtifact.bytecode,
         signer
       );
-      
-      console.log('Deploying DividendDistributor contract...');
+
       const dividendDistributor = await DividendDistributorFactory.deploy(tokenAddress);
       await dividendDistributor.deployed();
       console.log('DividendDistributor deployed to:', dividendDistributor.address);
-      
+
       return dividendDistributor.address;
     } else {
       throw new Error('MetaMask not available or not in browser environment');

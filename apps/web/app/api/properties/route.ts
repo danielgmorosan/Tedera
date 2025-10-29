@@ -13,6 +13,8 @@ const createSchema = z.object({
   totalShares: z.number().int().positive(),
   pricePerShare: z.number().positive(),
   tokenId: z.string().optional(),
+  saleContractAddress: z.string().optional(),
+  dividendContractAddress: z.string().optional(),
   type: z.enum(["forest", "solar", "real-estate"]).optional(),
   image: z.string().optional(),
   expectedYield: z.number().optional(),
@@ -58,27 +60,37 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createSchema.parse(body);
     
-    // Use the real token address provided from frontend deployment
-    let tokenDeployment;
-    if (data.tokenId) {
-      // Use the real deployed token address
-      tokenDeployment = {
-        tokenAddress: data.tokenId,
-        evmTokenAddress: data.tokenId,
-        transactionId: "real_deployment",
-      };
-    } else {
-      // This should not happen with the new frontend flow
+    // Validate that all required contract addresses are provided
+    if (!data.tokenId) {
       return NextResponse.json(
-        { error: "Token deployment must be done on frontend" },
+        { error: "Token address is required" },
         { status: 400 }
       );
     }
-    
-    // Generate mock contract addresses for sale and dividend contracts
-    // In production, these would also be deployed on frontend
-    const saleAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
-    const dividendAddress = `0x${Math.random().toString(16).substr(2, 40)}`;
+
+    if (!data.saleContractAddress) {
+      return NextResponse.json(
+        { error: "Sale contract address is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!data.dividendContractAddress) {
+      return NextResponse.json(
+        { error: "Dividend contract address is required" },
+        { status: 400 }
+      );
+    }
+
+    // Use the real deployed contract addresses from frontend
+    const tokenDeployment = {
+      tokenAddress: data.tokenId,
+      evmTokenAddress: data.tokenId,
+      transactionId: "real_deployment",
+    };
+
+    const saleAddress = data.saleContractAddress;
+    const dividendAddress = data.dividendContractAddress;
     
     // Save to database
     const property = await Property.create({

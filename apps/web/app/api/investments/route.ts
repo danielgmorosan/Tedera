@@ -9,6 +9,7 @@ import { parsePagination, buildSkipLimit } from "@/app/../lib/api/pagination";
 const investSchema = z.object({
   propertyId: z.string(),
   shares: z.number().int().positive(),
+  transactionHash: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
       property: property.id,
       shares: data.shares,
       amount,
+      transactionHash: data.transactionHash,
     });
     property.availableShares -= data.shares;
     await property.save();

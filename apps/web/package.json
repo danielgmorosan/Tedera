@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hashgraph/asset-tokenization-sdk": "^1.15.2",
+    "@hashgraph/did-sdk-js": "^0.1.1",
     "@hookform/resolvers": "^3.10.0",
     "@metamask/detect-provider": "^2.0.0",
     "@radix-ui/react-accordion": "1.2.2",

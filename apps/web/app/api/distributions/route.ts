@@ -9,6 +9,7 @@ const schema = z.object({
   propertyId: z.string(),
   totalAmount: z.number().positive(),
   description: z.string().optional(),
+  transactionHash: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
       property: property.id,
       totalAmount: data.totalAmount,
       description: data.description,
+      transactionHash: data.transactionHash,
     });
     return NextResponse.json({ distribution: dist }, { status: 201 });
   } catch (err: any) {

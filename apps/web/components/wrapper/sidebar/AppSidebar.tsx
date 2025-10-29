@@ -95,7 +95,6 @@ export default function AppSidebar() {
           />
         </div>
       </SidebarHeader>
-      <Sid
     </Sidebar>
   );
 }

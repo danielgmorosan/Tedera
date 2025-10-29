@@ -90,13 +90,27 @@ const nextConfig = {
     config.externals = [
       ...(config.externals || []),
       'rdf-canonize-native',
+      '@mattrglobal/node-bbs-signatures',
+      '@mattrglobal/bbs-signatures',
       /^@hashgraph\/asset-tokenization-contracts/,
     ];
-    
+
     // Ignore problematic modules during server-side rendering
     if (isServer) {
-      config.externals = [...(config.externals || []), 'rdf-canonize-native'];
+      config.externals = [
+        ...(config.externals || []),
+        'rdf-canonize-native',
+        '@mattrglobal/node-bbs-signatures',
+        '@mattrglobal/bbs-signatures',
+      ];
     }
+
+    // Ignore specific modules that cause issues
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /@mattrglobal\/(node-)?bbs-signatures/,
+      })
+    );
     
     return config;
   },

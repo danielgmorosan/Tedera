@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,46 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DollarSign, Send, CheckCircle, Leaf, Sun, Home } from "lucide-react"
+import { useDividendDistribution } from "@/hooks/use-dividend-distribution"
 
 interface Property {
-  id: string
-  title: string
+  _id: string
+  name: string
   type: "forest" | "solar" | "real-estate"
   totalShares: number
-  activeInvestors: number
-  lastDistribution: string
-  totalDistributed: number
+  dividendContractAddress?: string
+  image?: string
 }
-
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    title: "Amazon Rainforest Conservation",
-    type: "forest",
-    totalShares: 10000,
-    activeInvestors: 45,
-    lastDistribution: "2024-01-15",
-    totalDistributed: 125000,
-  },
-  {
-    id: "2",
-    title: "Solar Farm Texas",
-    type: "solar",
-    totalShares: 10000,
-    activeInvestors: 32,
-    lastDistribution: "2024-01-15",
-    totalDistributed: 87500,
-  },
-  {
-    id: "3",
-    title: "Sustainable Office Complex",
-    type: "real-estate",
-    totalShares: 10000,
-    activeInvestors: 28,
-    lastDistribution: "2024-01-15",
-    totalDistributed: 65000,
-  },
-]
 
 const typeIcons = {
   forest: Leaf,
@@ -57,30 +27,90 @@ const typeIcons = {
 }
 
 export function ProfitDistributionPanel() {
+  const [properties, setProperties] = useState<Property[]>([])
   const [selectedProperty, setSelectedProperty] = useState("")
   const [distributionAmount, setDistributionAmount] = useState("")
   const [isDistributing, setIsDistributing] = useState(false)
   const [distributionStatus, setDistributionStatus] = useState<"idle" | "success" | "error">("idle")
+  const [transactionHash, setTransactionHash] = useState("")
 
-  const selectedPropertyData = mockProperties.find((p) => p.id === selectedProperty)
+  const { createDistribution } = useDividendDistribution()
+
+  useEffect(() => {
+    fetchProperties()
+  }, [])
+
+  const fetchProperties = async () => {
+    try {
+      const token = localStorage.getItem('hedera-auth-token')
+      const response = await fetch('/api/properties', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setProperties(data.properties || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch properties:', error)
+    }
+  }
+
+  const selectedPropertyData = properties.find((p) => p._id === selectedProperty)
 
   const handleDistribute = async () => {
     if (!selectedProperty || !distributionAmount) return
 
+    const property = properties.find(p => p._id === selectedProperty)
+    if (!property?.dividendContractAddress) {
+      alert('Dividend contract not found for this property')
+      return
+    }
+
     setIsDistributing(true)
     setDistributionStatus("idle")
 
-    // Simulate profit distribution
-    setTimeout(() => {
+    try {
+      // Call real blockchain contract
+      const txHash = await createDistribution(
+        property.dividendContractAddress,
+        parseFloat(distributionAmount)
+      )
+
+      setTransactionHash(txHash)
+
+      // Save to database
+      const token = localStorage.getItem('hedera-auth-token')
+      await fetch('/api/distributions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          propertyId: selectedProperty,
+          totalAmount: parseFloat(distributionAmount),
+          transactionHash: txHash,
+          description: `Dividend distribution of ${distributionAmount} HBAR`
+        }),
+      })
+
       setDistributionStatus("success")
-      setIsDistributing(false)
+
       // Reset form after success
       setTimeout(() => {
         setDistributionStatus("idle")
         setSelectedProperty("")
         setDistributionAmount("")
-      }, 3000)
-    }, 2500)
+        setTransactionHash("")
+      }, 5000)
+    } catch (error) {
+      console.error('Distribution error:', error)
+      setDistributionStatus("error")
+    } finally {
+      setIsDistributing(false)
+    }
   }
 
   const calculatePerShareDistribution = () => {
@@ -95,9 +125,11 @@ export function ProfitDistributionPanel() {
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-green-800 mb-2">Distribution Successful!</h3>
           <p className="text-green-700 mb-4">
-            ${Number.parseInt(distributionAmount).toLocaleString()} has been distributed to{" "}
-            {selectedPropertyData?.activeInvestors} investors of {selectedPropertyData?.title}
+            {distributionAmount} HBAR has been distributed on-chain for {selectedPropertyData?.name}
           </p>
+          <Badge variant="outline" className="bg-green-100 border-green-300 text-green-800">
+            Transaction: {transactionHash.slice(0, 20)}...
+          </Badge>
           <Badge variant="outline" className="bg-green-100 border-green-300 text-green-800">
             Transaction ID: DIST-{Date.now()}
           </Badge>
@@ -125,13 +157,13 @@ export function ProfitDistributionPanel() {
                   <SelectValue placeholder="Choose a property" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockProperties.map((property) => {
-                    const Icon = typeIcons[property.type]
+                  {properties.map((property) => {
+                    const Icon = typeIcons[property.type] || Home
                     return (
-                      <SelectItem key={property.id} value={property.id}>
+                      <SelectItem key={property._id} value={property._id}>
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
-                          {property.title}
+                          {property.name}
                         </div>
                       </SelectItem>
                     )
@@ -141,7 +173,7 @@ export function ProfitDistributionPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Total Distribution Amount ($)</Label>
+              <Label htmlFor="amount">Total Distribution Amount (HBAR)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -156,23 +188,19 @@ export function ProfitDistributionPanel() {
           {selectedPropertyData && distributionAmount && (
             <div className="p-4 bg-muted/30 rounded-lg space-y-3">
               <h4 className="font-semibold text-foreground">Distribution Preview</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <div className="text-muted-foreground">Property</div>
-                  <div className="font-semibold">{selectedPropertyData.title}</div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">Active Investors</div>
-                  <div className="font-semibold">{selectedPropertyData.activeInvestors}</div>
+                  <div className="font-semibold">{selectedPropertyData.name}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Per Share</div>
-                  <div className="font-semibold">${calculatePerShareDistribution().toFixed(4)}</div>
+                  <div className="font-semibold">{calculatePerShareDistribution().toFixed(6)} HBAR</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Total Amount</div>
                   <div className="font-semibold text-primary">
-                    ${Number.parseInt(distributionAmount).toLocaleString()}
+                    {distributionAmount} HBAR
                   </div>
                 </div>
               </div>
@@ -213,22 +241,20 @@ export function ProfitDistributionPanel() {
                 <TableRow>
                   <TableHead>Property</TableHead>
                   <TableHead>Total Shares</TableHead>
-                  <TableHead>Active Investors</TableHead>
-                  <TableHead>Last Distribution</TableHead>
-                  <TableHead>Total Distributed</TableHead>
+                  <TableHead>Contract Address</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockProperties.map((property) => {
-                  const Icon = typeIcons[property.type]
+                {properties.map((property) => {
+                  const Icon = typeIcons[property.type] || Home
                   return (
-                    <TableRow key={property.id}>
+                    <TableRow key={property._id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
                           <div>
-                            <div className="font-semibold">{property.title}</div>
+                            <div className="font-semibold">{property.name}</div>
                             <div className="text-sm text-muted-foreground capitalize">
                               {property.type === "real-estate" ? "Real Estate" : property.type}
                             </div>
@@ -236,21 +262,17 @@ export function ProfitDistributionPanel() {
                         </div>
                       </TableCell>
                       <TableCell>{property.totalShares.toLocaleString()}</TableCell>
-                      <TableCell>{property.activeInvestors}</TableCell>
-                      <TableCell>
-                        {new Date(property.lastDistribution).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </TableCell>
-                      <TableCell className="font-semibold text-green-600">
-                        ${property.totalDistributed.toLocaleString()}
+                      <TableCell className="font-mono text-xs">
+                        {property.dividendContractAddress ?
+                          `${property.dividendContractAddress.slice(0, 10)}...` :
+                          'Not deployed'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-green-100 border-green-300 text-green-700">
+                        <Badge variant="outline" className={property.dividendContractAddress ?
+                          "bg-green-100 border-green-300 text-green-700" :
+                          "bg-gray-100 border-gray-300 text-gray-700"}>
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Active
+                          {property.dividendContractAddress ? 'Active' : 'Pending'}
                         </Badge>
                       </TableCell>
                     </TableRow>

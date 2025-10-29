@@ -458,60 +458,73 @@ export function CreateEquityTokenForm() {
                         <button
                           type="button"
                           onClick={async (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            const addressToCopy = token.tokenAddress || token.evmTokenAddress || token.transactionHash;
+                            console.log("Attempting to copy:", addressToCopy);
+
+                            if (!addressToCopy) {
+                              console.error("No address to copy");
+                              alert("No address available to copy");
+                              return;
+                            }
+
                             try {
-                              const addressToCopy = token.tokenAddress || token.evmTokenAddress || token.transactionHash;
-                              console.log("Attempting to copy:", addressToCopy);
-                              
-                              if (addressToCopy) {
-                                // Try modern clipboard API first
-                                if (navigator.clipboard && navigator.clipboard.writeText) {
-                                  await navigator.clipboard.writeText(addressToCopy);
+                              // Method 1: Try modern clipboard API
+                              if (navigator.clipboard && navigator.clipboard.writeText) {
+                                await navigator.clipboard.writeText(addressToCopy);
+                                console.log("✅ Copied using Clipboard API");
+                              } else {
+                                // Method 2: Fallback to textarea method
+                                const textArea = document.createElement('textarea');
+                                textArea.value = addressToCopy;
+                                textArea.style.position = 'absolute';
+                                textArea.style.left = '-9999px';
+                                textArea.style.top = '0';
+                                textArea.setAttribute('readonly', '');
+                                document.body.appendChild(textArea);
+
+                                // Select the text
+                                if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+                                  // iOS specific
+                                  const range = document.createRange();
+                                  range.selectNodeContents(textArea);
+                                  const selection = window.getSelection();
+                                  selection?.removeAllRanges();
+                                  selection?.addRange(range);
+                                  textArea.setSelectionRange(0, 999999);
                                 } else {
-                                  // Fallback to older method
-                                  const textArea = document.createElement('textarea');
-                                  textArea.value = addressToCopy;
-                                  textArea.style.position = 'fixed';
-                                  textArea.style.left = '-999999px';
-                                  textArea.style.top = '-999999px';
-                                  document.body.appendChild(textArea);
-                                  textArea.focus();
                                   textArea.select();
-                                  
-                                  try {
-                                    document.execCommand('copy');
-                                    console.log("Copied using fallback method");
-                                  } catch (err) {
-                                    console.error("Fallback copy failed:", err);
-                                    throw new Error("Copy failed");
-                                  } finally {
-                                    document.body.removeChild(textArea);
-                                  }
                                 }
-                                
-                                setCopiedAddress(addressToCopy);
-                                // Clear the feedback after 2 seconds
-                                setTimeout(() => setCopiedAddress(null), 2000);
-                                console.log("Successfully copied address:", addressToCopy);
-                                
-                                // Additional visual feedback
-                                const button = event.currentTarget;
-                                const originalText = button.title;
-                                button.title = "Copied!";
-                                setTimeout(() => {
-                                  button.title = originalText;
-                                }, 2000);
-                              } else {
-                                console.error("No address to copy");
-                                alert("No address available to copy");
+
+                                const successful = document.execCommand('copy');
+                                document.body.removeChild(textArea);
+
+                                if (!successful) {
+                                  throw new Error("execCommand failed");
+                                }
+                                console.log("✅ Copied using execCommand");
                               }
+
+                              // Show success feedback
+                              setCopiedAddress(addressToCopy);
+                              setTimeout(() => setCopiedAddress(null), 2000);
+                              console.log("✅ Successfully copied address:", addressToCopy);
+
                             } catch (error) {
-                              console.error("Failed to copy address:", error);
-                              // Fallback: show the address in an alert
-                              const addressToCopy = token.tokenAddress || token.evmTokenAddress || token.transactionHash;
-                              if (addressToCopy) {
-                                alert("Copy failed. Please manually copy this address:\n" + addressToCopy);
-                              } else {
-                                alert("No address available to copy");
+                              console.error("❌ All copy methods failed:", error);
+
+                              // Last resort: Create a prompt with the address
+                              const userCopied = window.prompt(
+                                "Automatic copy failed. Please copy this address manually (Ctrl+C or Cmd+C):",
+                                addressToCopy
+                              );
+
+                              if (userCopied !== null) {
+                                // User clicked OK, assume they copied it
+                                setCopiedAddress(addressToCopy);
+                                setTimeout(() => setCopiedAddress(null), 2000);
                               }
                             }
                           }}

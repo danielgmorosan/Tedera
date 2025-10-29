@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { signJwt } from "@/app/../lib/api/auth";
 import { dbConnect } from "@/app/../lib/db";
 import { User } from "@/app/../models/User";
+import { createDIDIdentifier } from "@/lib/hedera/did";
 
 const schema = z.object({
   username: z.string().optional(),
@@ -38,9 +39,13 @@ export async function POST(req: NextRequest) {
     } else if (data.hederaAccountId) {
       user = await User.findOne({ hederaAccountId: data.hederaAccountId });
       if (!user) {
+        // Create DID identifier for new wallet user
+        const did = createDIDIdentifier(data.hederaAccountId);
+
         user = await User.create({
           username: `wallet_${data.hederaAccountId.replace(/\./g, "_")}`,
           hederaAccountId: data.hederaAccountId,
+          did: did,
           isKYCVerified: false,
         });
       }

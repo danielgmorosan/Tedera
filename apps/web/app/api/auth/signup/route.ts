@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { signJwt } from "@/app/../lib/api/auth";
 import { dbConnect } from "@/app/../lib/db";
 import { User } from "@/app/../models/User";
+import { createDIDIdentifier } from "@/lib/hedera/did";
 
 const schema = z.object({
   username: z.string().min(3),
@@ -24,11 +25,19 @@ export async function POST(req: NextRequest) {
     if (existing)
       return NextResponse.json({ error: "Username exists" }, { status: 409 });
     const passwordHash = await bcrypt.hash(data.password, 10);
+
+    // Create DID identifier if Hedera account ID is provided
+    let did: string | undefined;
+    if (data.hederaAccountId) {
+      did = createDIDIdentifier(data.hederaAccountId);
+    }
+
     const user = await User.create({
       username: data.username,
       email: data.email,
       passwordHash,
       hederaAccountId: data.hederaAccountId,
+      did: did,
       isKYCVerified: false,
     });
     const token = signJwt({ sub: user.id, username: user.username });

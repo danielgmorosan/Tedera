@@ -123,7 +123,7 @@ npm run web:clean              # Clean web app build
 ## 📚 Documentation
 
 - **[QUICK_START.md](docs/QUICK_START.md)** - Get started in 5 minutes
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment guide
+- **[DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** - Complete deployment guide
 - **[REFACTOR_SUMMARY.md](docs/REFACTOR_SUMMARY.md)** - Codebase refactor details
 - **[PROGRESS_LOG.md](./PROGRESS_LOG.md)** - Development progress log
 - **[packages/contracts/README.md](./packages/contracts/README.md)** - Smart contracts documentation
