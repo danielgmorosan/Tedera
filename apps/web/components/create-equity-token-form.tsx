@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Coins, FileText, Shield } from "lucide-react";
+import { CheckCircle, Coins, FileText, Shield, ExternalLink } from "lucide-react";
 
 interface EquityTokenForm {
   // Create Equity
@@ -1042,6 +1042,113 @@ export function CreateEquityTokenForm() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Created Tokens List */}
+      {createdTokens.length > 0 && (
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-xl">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+              </div>
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                Created Equity Tokens ({createdTokens.length})
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {createdTokens.map((token) => (
+                <div
+                  key={token.id}
+                  className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-900">
+                          {token.tokenName}
+                        </h3>
+                        <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          {token.tokenSymbol}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-slate-500">Token Address:</span>
+                          <div className="flex items-center gap-1 mt-1">
+                            <code className="text-xs bg-white px-2 py-1 rounded border border-slate-200 font-mono">
+                              {token.tokenAddress.slice(0, 10)}...{token.tokenAddress.slice(-8)}
+                            </code>
+                            <a
+                              href={`https://hashscan.io/testnet/contract/${token.tokenAddress}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-600 hover:text-emerald-700"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-slate-500">Transaction:</span>
+                          <div className="flex items-center gap-1 mt-1">
+                            <code className="text-xs bg-white px-2 py-1 rounded border border-slate-200 font-mono">
+                              {token.transactionHash.slice(0, 10)}...{token.transactionHash.slice(-8)}
+                            </code>
+                            <a
+                              href={`https://hashscan.io/testnet/transaction/${token.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-600 hover:text-emerald-700"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-slate-500">Total Shares:</span>
+                          <p className="font-medium text-slate-900 mt-1">
+                            {Number(token.numberOfShares).toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="text-slate-500">Nominal Value:</span>
+                          <p className="font-medium text-slate-900 mt-1">
+                            {token.nominalValue} {token.currency}
+                          </p>
+                        </div>
+                      </div>
+
+                      {token.chosenRights.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {token.chosenRights.map((right) => (
+                            <Badge
+                              key={right}
+                              variant="outline"
+                              className="text-xs bg-white"
+                            >
+                              {right}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-400 mt-2">
+                        Created {new Date(token.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
