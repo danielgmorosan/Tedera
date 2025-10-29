@@ -1,0 +1,29 @@
+{
+  "name": "tedera-contracts",
+  "version": "1.0.0",
+  "description": "Custom smart contracts for Tedera property tokenization platform",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "compile:force": "hardhat compile --force",
+    "clean": "hardhat clean",
+    "test": "hardhat test",
+    "deploy:all": "hardhat run scripts/deployAll.ts --network testnet",
+    "deploy:testnet": "hardhat run scripts/deployPropertyContracts.ts --network testnet",
+    "deploy:token": "hardhat run scripts/deployWithToken.ts --network testnet"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.6",
+    "ethers": "^5.8.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
+    "dotenv": "^16.0.3",
+    "hardhat": "^2.22.19",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.8.2"
+  }
+}
+
