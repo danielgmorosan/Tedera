@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export { DividendDistributor__factory } from "./DividendDistributor__factory";
+export { EquityToken__factory } from "./EquityToken__factory";
 export { PropertySale__factory } from "./PropertySale__factory";

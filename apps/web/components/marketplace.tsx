@@ -326,10 +326,14 @@ export function Marketplace() {
         const response = await fetch('/api/properties');
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ Fetched properties:', data.properties?.length || 0, 'properties');
+          console.log('📋 Properties:', data.properties);
           setProperties(data.properties || []);
+        } else {
+          console.error('❌ Failed to fetch properties:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Failed to fetch properties:', error);
+        console.error('❌ Failed to fetch properties:', error);
         setProperties([]);
       } finally {
         setLoading(false);

@@ -6,7 +6,7 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.18",
+    version: "0.8.20",
     settings: {
       optimizer: {
         enabled: true,
@@ -17,14 +17,14 @@ const config: HardhatUserConfig = {
   networks: {
     testnet: {
       url: process.env.TESTNET_RPC_URL || "https://testnet.hashio.io/api",
-      accounts: process.env.TESTNET_PRIVATE_KEY
+      accounts: (process.env.TESTNET_PRIVATE_KEY && process.env.TESTNET_PRIVATE_KEY.length === 66)
         ? [process.env.TESTNET_PRIVATE_KEY]
         : [],
       chainId: 296,
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || "https://mainnet.hashio.io/api",
-      accounts: process.env.MAINNET_PRIVATE_KEY
+      accounts: (process.env.MAINNET_PRIVATE_KEY && process.env.MAINNET_PRIVATE_KEY.length === 66)
         ? [process.env.MAINNET_PRIVATE_KEY]
         : [],
       chainId: 295,

@@ -1,5 +1,40 @@
-export default function MetricsCards() {
+import { PortfolioMetrics } from "@/lib/services/portfolioService";
+
+interface MetricsCardsProps {
+  metrics: PortfolioMetrics;
+  isDemoMode: boolean;
+}
+
+export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps) {
   const imgLineChart = "/portfolio/Metrics.svg";
+
+  // Demo data
+  const demoMetrics = {
+    totalInvested: 98450,
+    currentValue: 125430.50,
+    totalProfit: 45.2,
+    totalReturn: {
+      amount: 26980.50,
+      percentage: 27.4,
+    },
+    totalHoldings: 150,
+    activeProperties: 102,
+  };
+
+  const displayMetrics = isDemoMode ? demoMetrics : metrics;
+
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Calculate month-over-month change (mock for now)
+  const monthlyChange = isDemoMode ? 12.5 : 0;
 
   return (
     <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px]  h-full relative  w-full">
@@ -28,7 +63,7 @@ export default function MetricsCards() {
               className="css-k0nvzb font-['Inter:Semi_Bold',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre"
               data-node-id="2:4720"
             >
-              $98,450
+              {formatCurrency(displayMetrics.totalInvested)}
             </p>
             <div
               className="content-stretch flex gap-[6px] items-center relative shrink-0"
@@ -51,14 +86,14 @@ export default function MetricsCards() {
                   className="css-c8nvji font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
                   data-node-id="2:4725"
                 >
-                  12.5%
+                  {monthlyChange.toFixed(1)}%
                 </p>
               </div>
               <p
                 className="css-668lj font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre"
                 data-node-id="2:4726"
               >
-                from last month
+                {isDemoMode ? 'from last month' : 'total invested'}
               </p>
             </div>
           </div>
@@ -83,7 +118,7 @@ export default function MetricsCards() {
               className="absolute css-c8nvji font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
               data-node-id="2:7538"
             >
-              +$12,180
+              {isDemoMode ? '+$12,180' : `+${formatCurrency(displayMetrics.totalInvested * (monthlyChange / 100))}`}
             </p>
           </div>
         </div>
@@ -143,7 +178,7 @@ export default function MetricsCards() {
                 className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[20px] text-nowrap whitespace-pre"
                 data-node-id="3:98670"
               >
-                150
+                {displayMetrics.totalHoldings}
               </p>
               <div
                 className="content-stretch flex gap-[4px] items-center relative shrink-0"
@@ -166,7 +201,7 @@ export default function MetricsCards() {
                     className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
                     data-node-id="3:98675"
                   >
-                    4.5%
+                    {isDemoMode ? '4.5%' : '0%'}
                   </p>
                 </div>
               </div>
@@ -179,13 +214,13 @@ export default function MetricsCards() {
                 className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] relative shrink-0 text-[#2d9f75] text-[12px]"
                 data-node-id="3:98677"
               >
-                80%
+                {isDemoMode ? '80%' : '0%'}
               </p>
               <p
                 className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] relative shrink-0 text-[#868c98] text-[11px]"
                 data-node-id="3:98678"
               >
-                Progress goal
+                {isDemoMode ? 'Progress goal' : 'Holdings'}
               </p>
             </div>
           </div>
@@ -246,7 +281,7 @@ export default function MetricsCards() {
         <div className="basis-0 content-stretch flex grow items-end justify-between min-h-px min-w-px relative shrink-0 w-[272px]">
           <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0">
             <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre">
-              45.2%
+              {formatCurrency(displayMetrics.totalProfit)}
             </p>
             <div className="content-stretch flex gap-[4px] items-center relative shrink-0">
               <div className="content-stretch flex gap-[3px] items-center relative shrink-0">
@@ -256,11 +291,11 @@ export default function MetricsCards() {
                   </svg>
                 </div>
                 <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre">
-                  9.2%
+                  {isDemoMode ? '9.2%' : '0%'}
                 </p>
               </div>
               <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre">
-                growth
+                {isDemoMode ? 'growth' : 'dividends'}
               </p>
             </div>
           </div>
@@ -429,7 +464,7 @@ export default function MetricsCards() {
                   className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[18.166px] w-[32.698px]"
                   data-node-id="3:98693"
                 >
-                  102
+                  {displayMetrics.activeProperties}
                 </p>
                 <div
                   className="content-stretch flex gap-[2.725px] h-[18.166px] items-center relative shrink-0"
@@ -453,7 +488,7 @@ export default function MetricsCards() {
                     className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[10.899px] text-nowrap whitespace-pre"
                     data-node-id="3:98697"
                   >
-                    80
+                    {isDemoMode ? '80' : displayMetrics.totalReturn.percentage.toFixed(1)}
                   </p>
                 </div>
               </div>
@@ -497,7 +532,7 @@ export default function MetricsCards() {
                   className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[18.166px] text-nowrap whitespace-pre"
                   data-node-id="3:98701"
                 >
-                  18
+                  {displayMetrics.totalHoldings - displayMetrics.activeProperties}
                 </p>
                 <div
                   className="content-stretch flex gap-[2.725px] h-[18.166px] items-center w-full relative shrink-0"
@@ -524,7 +559,7 @@ export default function MetricsCards() {
                     className="css-2qvfzs font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#d84e68] text-[10.899px] text-nowrap whitespace-pre"
                     data-node-id="3:98705"
                   >
-                    10
+                    {isDemoMode ? '10' : '0'}
                   </p>
                 </div>
               </div>

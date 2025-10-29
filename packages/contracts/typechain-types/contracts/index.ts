@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { DividendDistributor } from "./DividendDistributor";
+export type { EquityToken } from "./EquityToken";
 export type { PropertySale } from "./PropertySale";

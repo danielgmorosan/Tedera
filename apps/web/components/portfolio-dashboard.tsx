@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MetricsCards from "../components/MetricsCards";
 import HoldingsTable from "../components/HoldingsTable";
 import { Button } from "./ui/button";
@@ -11,12 +11,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
 import { CalendarIcon } from "lucide-react";
 import { useAuth } from "../context/auth-context";
+import { useWallet } from "../context/wallet-context";
 import { format, startOfDay, endOfDay, subDays, subMonths, subYears } from "date-fns";
+import {
+  fetchUserPortfolio,
+  calculatePortfolioMetrics,
+  PropertyHolding,
+  PortfolioMetrics
+} from "@/lib/services/portfolioService";
+import { ethers } from "ethers";
 
 export default function PortfolioDashboard() {
   const { user, wallet } = useAuth();
+  const { provider: walletProvider, account: walletAccount } = useWallet();
   const [selectedDateRange, setSelectedDateRange] = useState(() => {
     const now = new Date();
     const currentMonth = format(now, "MMM");
@@ -25,6 +36,41 @@ export default function PortfolioDashboard() {
   });
   const [exportSuccess, setExportSuccess] = useState(false);
   const [isExportActive, setIsExportActive] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [holdings, setHoldings] = useState<PropertyHolding[]>([]);
+  const [metrics, setMetrics] = useState<PortfolioMetrics>({
+    totalInvested: 0,
+    currentValue: 0,
+    totalProfit: 0,
+    totalReturn: { amount: 0, percentage: 0 },
+    totalHoldings: 0,
+    activeProperties: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch portfolio data when not in demo mode
+  useEffect(() => {
+    async function loadPortfolio() {
+      if (isDemoMode || !walletAccount || !walletProvider) {
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const userHoldings = await fetchUserPortfolio(walletAccount, walletProvider);
+        setHoldings(userHoldings);
+
+        const portfolioMetrics = calculatePortfolioMetrics(userHoldings);
+        setMetrics(portfolioMetrics);
+      } catch (error) {
+        console.error('Error loading portfolio:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPortfolio();
+  }, [isDemoMode, walletAccount, walletProvider]);
 
   // Get current date formatted as day of week, month day, year using date-fns
   const getCurrentDate = () => {
@@ -122,6 +168,18 @@ export default function PortfolioDashboard() {
           className="absolute border-[0px_0px_1px] border-[rgba(46,46,46,0.05)] border-solid inset-0 pointer-events-none"
         />
         <div className="basis-0 content-stretch flex gap-[8px] grow items-center min-h-px min-w-px relative shrink-0">
+          {/* Demo Mode Toggle */}
+          <div className="flex items-center gap-3 mr-4">
+            <Switch
+              id="demo-mode"
+              checked={isDemoMode}
+              onCheckedChange={setIsDemoMode}
+            />
+            <Label htmlFor="demo-mode" className="text-sm font-medium cursor-pointer">
+              {isDemoMode ? '🎭 Demo Mode' : '📊 Real Data'}
+            </Label>
+          </div>
+
           <div className="overflow-clip relative shrink-0 size-[18px]">
             <svg
               width="16"
@@ -230,10 +288,22 @@ export default function PortfolioDashboard() {
         </div>
 
         {/* Metrics Cards */}
-        <MetricsCards />
+        {isLoading && !isDemoMode ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : (
+          <MetricsCards metrics={metrics} isDemoMode={isDemoMode} />
+        )}
 
         {/* Holdings Table */}
-        <HoldingsTable />
+        {isLoading && !isDemoMode ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : (
+          <HoldingsTable holdings={holdings} isDemoMode={isDemoMode} />
+        )}
       </div>
     </div>
   );

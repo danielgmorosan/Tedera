@@ -198,75 +198,67 @@ export function CreateEquityTokenForm() {
         return;
       }
 
-      // Request account access
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts.length === 0) {
-        alert('Please connect your MetaMask wallet');
-        setIsCreating(false);
-        return;
-      }
+      // Import ethers
+      const { ethers } = await import('ethers');
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
 
-      // Switch to Hedera testnet
-      try {
-        await ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x128' }], // Hedera testnet chain ID (296)
-        });
-      } catch (switchError: any) {
-        // Chain not added, add it
-        if (switchError.code === 4902) {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0x128',
-              chainName: 'Hedera Testnet',
-              nativeCurrency: {
-                name: 'HBAR',
-                symbol: 'HBAR',
-                decimals: 18
-              },
-              rpcUrls: ['https://testnet.hashio.io/api'],
-              blockExplorerUrls: ['https://hashscan.io/testnet']
-            }],
-          });
-        }
-      }
-
-      // Call the API to deploy the equity token
-      const response = await fetch('/api/equity-tokens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.tokenName,
-          symbol: formData.tokenSymbol,
-          decimals: parseInt(formData.tokenDecimals),
-          isin: formData.isin,
-          nominalValue: formData.nominalValue,
-          currency: formData.currency,
-          numberOfShares: formData.numberOfShares,
-          totalValue: formData.totalValue,
-          chosenRights: formData.chosenRights,
-          dividendType: formData.dividendType,
-          regulationType: formData.regulationType,
-          regulationSubType: formData.regulationSubType,
-          blockedCountries: formData.blockedCountries,
-        }),
+      console.log('🚀 Deploying equity token from frontend...');
+      console.log('📋 Token details:', {
+        name: formData.tokenName,
+        symbol: formData.tokenSymbol,
+        totalShares: formData.numberOfShares,
+        isin: formData.isin,
+        nominalValue: formData.nominalValue,
+        currency: formData.currency,
+        rights: formData.chosenRights,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create equity token');
-      }
+      // Import the EquityToken contract ABI and bytecode
+      const EquityTokenABI = await import('@/lib/contracts/EquityToken.json');
 
-      const result = await response.json();
-      const transactionHash = result.transactionId || result.transactionHash;
-      const tokenAddress = result.tokenAddress || result.evmTokenAddress;
-      const evmTokenAddress = result.evmTokenAddress || result.tokenAddress;
+      console.log('📝 Deploying EquityToken contract...');
 
-      console.log("API Response:", result);
-      console.log("Extracted values:", { transactionHash, tokenAddress, evmTokenAddress });
+      // Prepare rights array
+      const rights = [
+        formData.chosenRights.includes('Voting Rights'),
+        formData.chosenRights.includes('Information Rights'),
+        formData.chosenRights.includes('Liquidation Rights'),
+        formData.chosenRights.includes('Subscription Rights'),
+        formData.chosenRights.includes('Conversion Rights'),
+        formData.chosenRights.includes('Redemption Rights'),
+        formData.chosenRights.includes('Put Rights'),
+        formData.chosenRights.includes('Dividend Rights'),
+      ];
+
+      // Create contract factory
+      const TokenFactory = new ethers.ContractFactory(
+        EquityTokenABI.abi,
+        EquityTokenABI.bytecode,
+        signer
+      );
+
+      // Deploy the token with all parameters
+      const token = await TokenFactory.deploy(
+        formData.tokenName,
+        formData.tokenSymbol,
+        formData.numberOfShares,
+        formData.isin,
+        ethers.utils.parseEther(formData.nominalValue), // Convert to wei
+        formData.currency,
+        rights
+      );
+
+      console.log('⏳ Waiting for deployment confirmation...');
+      await token.deployed();
+
+      const tokenAddress = token.address;
+      const evmTokenAddress = token.address;
+      const transactionHash = token.deployTransaction.hash;
+
+      console.log('✅ Token deployed successfully!');
+      console.log('📄 Token address:', tokenAddress);
+      console.log('📄 Transaction hash:', transactionHash);
 
       const newToken: CreatedToken = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2),

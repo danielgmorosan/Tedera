@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { PropertyHolding } from "@/lib/services/portfolioService";
 
 interface HoldingData {
   id: string;
@@ -24,6 +25,11 @@ interface HoldingData {
   status: "sell" | "sold" | "hold";
   aiInsight: string;
   image: string;
+}
+
+interface HoldingsTableProps {
+  holdings: PropertyHolding[];
+  isDemoMode: boolean;
 }
 
 const mockHoldings: HoldingData[] = [
@@ -94,7 +100,29 @@ const mockHoldings: HoldingData[] = [
   },
 ];
 
-export default function HoldingsTable() {
+export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTableProps) {
+  // Convert PropertyHolding to HoldingData format
+  const realHoldings: HoldingData[] = holdings.map((h) => ({
+    id: h.propertyId,
+    name: h.propertyName,
+    category: h.category,
+    sharesOwned: h.sharesOwned,
+    oldPrice: h.pricePerShare,
+    value: h.currentValue,
+    yield: h.expectedYield,
+    gainLoss: {
+      percentage: h.gainLoss.percentage,
+      isGain: h.gainLoss.isGain,
+    },
+    status: h.status === 'active' ? 'hold' : 'sold',
+    aiInsight: h.claimableDividends > 0
+      ? `${h.claimableDividends.toFixed(4)} HBAR dividends available to claim`
+      : 'No dividends available yet',
+    image: h.propertyImage,
+  }));
+
+  const displayHoldings = isDemoMode ? mockHoldings : realHoldings;
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
       {/* Header */}
@@ -189,7 +217,7 @@ export default function HoldingsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockHoldings.map((holding) => (
+          {displayHoldings.map((holding) => (
             <TableRow key={holding.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
@@ -326,7 +354,7 @@ export default function HoldingsTable() {
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4 p-4">
-        {mockHoldings.map((holding) => (
+        {displayHoldings.map((holding) => (
           <div key={holding.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-[30px] h-[30px] rounded-md overflow-hidden bg-gradient-to-br from-blue-400 to-green-400 flex-shrink-0">
