@@ -5,7 +5,11 @@ import { dbConnect } from "@/app/../lib/db";
 import { Property } from "@/app/../models/Property";
 import { bearerToPayload } from "@/app/../lib/api/auth";
 import { parsePagination, buildSkipLimit } from "@/app/../lib/api/pagination";
-import { deployPropertyToken, deployPropertySale, deployDividendDistributor } from "@/lib/hedera/tokenDeployment";
+import {
+  deployPropertyToken,
+  deployPropertySale,
+  deployDividendDistributor,
+} from "@/lib/hedera/tokenDeployment";
 
 const createSchema = z.object({
   name: z.string().min(3),
@@ -57,10 +61,10 @@ export async function POST(req: NextRequest) {
     const payload = bearerToPayload(req.headers.get("authorization"));
     if (!payload)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
+
     const body = await req.json();
     const data = createSchema.parse(body);
-    
+
     // Validate that all required contract addresses are provided
     if (!data.tokenId) {
       return NextResponse.json(
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     const saleAddress = data.saleContractAddress;
     const dividendAddress = data.dividendContractAddress;
-    
+
     // Save to database
     const property = await Property.create({
       name: data.name,
@@ -121,10 +125,10 @@ export async function POST(req: NextRequest) {
       dividendContractAddress: dividendAddress,
       transactionId: tokenDeployment.transactionId,
     });
-    
+
     return NextResponse.json({ property }, { status: 201 });
   } catch (err: any) {
-    console.error('Property creation error:', err);
+    console.error("Property creation error:", err);
     return NextResponse.json(
       { error: err.message || "Create failed" },
       { status: 400 }

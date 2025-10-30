@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/hedera_asset_dev";
+  process.env.MONGODB_URI ||
+  "mongodb://root:example@localhost:27017/tedera?authSource=admin";
+
+console.log("MOBNGOPDNDB URI", MONGODB_URI);
 
 if (!MONGODB_URI) {
   throw new Error("Missing MONGO_URI env");

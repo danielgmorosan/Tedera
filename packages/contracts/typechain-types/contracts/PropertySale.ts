@@ -30,6 +30,8 @@ import type {
 
 export interface PropertySaleInterface extends utils.Interface {
   functions: {
+    "HBAR_UNITS()": FunctionFragment;
+    "PROPERTY_TOKEN_UNITS()": FunctionFragment;
     "buyShares(uint256)": FunctionFragment;
     "isSaleActive()": FunctionFragment;
     "owner()": FunctionFragment;
@@ -51,6 +53,8 @@ export interface PropertySaleInterface extends utils.Interface {
 
   getFunction(
     nameOrSignatureOrTopic:
+      | "HBAR_UNITS"
+      | "PROPERTY_TOKEN_UNITS"
       | "buyShares"
       | "isSaleActive"
       | "owner"
@@ -70,6 +74,14 @@ export interface PropertySaleInterface extends utils.Interface {
       | "withdrawFunds"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "HBAR_UNITS",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "PROPERTY_TOKEN_UNITS",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "buyShares",
     values: [PromiseOrValue<BigNumberish>]
@@ -136,6 +148,11 @@ export interface PropertySaleInterface extends utils.Interface {
     values?: undefined
   ): string;
 
+  decodeFunctionResult(functionFragment: "HBAR_UNITS", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "PROPERTY_TOKEN_UNITS",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "buyShares", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "isSaleActive",
@@ -282,6 +299,10 @@ export interface PropertySale extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    HBAR_UNITS(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    PROPERTY_TOKEN_UNITS(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     buyShares(
       shares: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
@@ -337,6 +358,10 @@ export interface PropertySale extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
+
+  HBAR_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
+
+  PROPERTY_TOKEN_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
 
   buyShares(
     shares: PromiseOrValue<BigNumberish>,
@@ -394,6 +419,10 @@ export interface PropertySale extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    HBAR_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
+
+    PROPERTY_TOKEN_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
+
     buyShares(
       shares: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -482,6 +511,10 @@ export interface PropertySale extends BaseContract {
   };
 
   estimateGas: {
+    HBAR_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
+
+    PROPERTY_TOKEN_UNITS(overrides?: CallOverrides): Promise<BigNumber>;
+
     buyShares(
       shares: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
@@ -539,6 +572,12 @@ export interface PropertySale extends BaseContract {
   };
 
   populateTransaction: {
+    HBAR_UNITS(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    PROPERTY_TOKEN_UNITS(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     buyShares(
       shares: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }

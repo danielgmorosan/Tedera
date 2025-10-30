@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.18;
 
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -18,9 +19,16 @@ contract PropertySale is Ownable, ReentrancyGuard {
     bool public saleActive;
     uint256 public saleEndTime; // Unix timestamp for sale deadline
 
+    uint256 public constant HBAR_UNITS = 1e8;
+    uint256 public constant PROPERTY_TOKEN_UNITS = 1e18;
+
     mapping(address => uint256) public purchased;
 
-    event SharesPurchased(address indexed buyer, uint256 shares, uint256 amount);
+    event SharesPurchased(
+        address indexed buyer,
+        uint256 shares,
+        uint256 amount
+    );
     event SaleStatusChanged(bool active);
     event FundsWithdrawn(address indexed owner, uint256 amount);
     event PriceUpdated(uint256 newPrice);
@@ -49,8 +57,14 @@ contract PropertySale is Ownable, ReentrancyGuard {
         require(_pricePerShare > 0, "Price must be greater than 0");
         require(_totalShares > 0, "Total shares must be greater than 0");
         // Ensure totalShares respects ERC20 18-decimal standard and at least 1 whole token
-        require(_totalShares % 1e18 == 0, "totalShares must be in 18 decimals");
-        require(_totalShares >= 1e18, "totalShares must be >= 1 token");
+        require(
+            _totalShares % PROPERTY_TOKEN_UNITS == 0,
+            "totalShares must be in 18 decimals"
+        );
+        require(
+            _totalShares >= PROPERTY_TOKEN_UNITS,
+            "totalShares must be >= 1 token"
+        );
 
         propertyToken = IERC20(_token);
         pricePerShare = _pricePerShare;
@@ -64,8 +78,11 @@ contract PropertySale is Ownable, ReentrancyGuard {
 
     /// @notice Quote exact HBAR needed for `shares` (shares in token wei)
     function quoteCost(uint256 shares) public view returns (uint256) {
-        if (shares == 0 || shares % 1e18 != 0) revert InvalidShares();
-        return (shares * pricePerShare) / 1e18;
+        if (shares == 0 || shares % PROPERTY_TOKEN_UNITS != 0)
+            revert InvalidShares();
+        return
+            (shares * pricePerShare) /
+            (PROPERTY_TOKEN_UNITS + PROPERTY_TOKEN_UNITS - HBAR_UNITS);
     }
 
     /**
@@ -74,8 +91,10 @@ contract PropertySale is Ownable, ReentrancyGuard {
      */
     function buyShares(uint256 shares) external payable nonReentrant {
         if (!saleActive) revert SaleNotActive();
-        if (shares == 0 || shares % 1e18 != 0) revert InvalidShares();
-        if (saleEndTime > 0 && block.timestamp > saleEndTime) revert SaleEnded();
+        if (shares == 0 || shares % PROPERTY_TOKEN_UNITS != 0)
+            revert InvalidShares();
+        if (saleEndTime > 0 && block.timestamp > saleEndTime)
+            revert SaleEnded();
         if (sharesSold + shares > totalShares) {
             revert InventoryUnavailable(totalShares - sharesSold, shares);
         }
@@ -84,8 +103,9 @@ contract PropertySale is Ownable, ReentrancyGuard {
         uint256 inventory = propertyToken.balanceOf(address(this));
         if (inventory < shares) revert InventoryUnavailable(inventory, shares);
 
-        uint256 cost = (shares * pricePerShare) / 1e18;
-        if (msg.value < cost) revert InsufficientPayment(cost, msg.value);
+        uint256 cost = ((shares * pricePerShare) * HBAR_UNITS) /
+            (PROPERTY_TOKEN_UNITS * PROPERTY_TOKEN_UNITS);
+        if (msg.value < cost) revert InsufficientPayment(msg.value, cost);
 
         // Update state before external calls (CEI pattern)
         sharesSold += shares;
