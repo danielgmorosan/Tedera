@@ -40,10 +40,13 @@ async function deployForToken(
   // Deploy PropertySale
   console.log("\n🚀 Deploying PropertySale...");
   const PropertySale = await ethers.getContractFactory("PropertySale");
+  const totalSharesWei = ethers.utils.parseUnits(totalShares.toString(), 18);
+  console.log("   totalShares (human):", totalShares);
+  console.log("   totalShares (wei):", totalSharesWei.toString());
   const propertySale = await PropertySale.deploy(
     tokenAddress,
     pricePerShare,
-    totalShares,
+    totalSharesWei,
     saleDuration
   );
   await propertySale.deployTransaction.wait();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { z } from "zod";
 import { dbConnect } from "@/app/../lib/db";
 import { Property } from "@/app/../models/Property";
@@ -100,7 +101,9 @@ export async function POST(req: NextRequest) {
       totalShares: data.totalShares,
       availableShares: data.totalShares,
       pricePerShare: data.pricePerShare,
-      createdBy: payload.sub,
+      createdBy: mongoose.isValidObjectId(payload.sub)
+        ? (payload.sub as any)
+        : new mongoose.Types.ObjectId(),
       // Additional marketplace fields
       type: data.type || "real-estate",
       image: data.image,

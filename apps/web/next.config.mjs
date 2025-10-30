@@ -20,15 +20,15 @@ const nextConfig = {
       fs: false,
       net: false,
       tls: false,
-      crypto: false,
-      stream: false,
-      url: false,
-      zlib: false,
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      url: require.resolve('url'),
+      zlib: require.resolve('browserify-zlib'),
       http: false,
       https: false,
       assert: false,
       os: false,
-      path: false,
+      path: require.resolve('path-browserify'),
       buffer: require.resolve('buffer'),
       util: require.resolve('util'),
     };
@@ -94,16 +94,6 @@ const nextConfig = {
       '@mattrglobal/bbs-signatures',
       /^@hashgraph\/asset-tokenization-contracts/,
     ];
-
-    // Ignore problematic modules during server-side rendering
-    if (isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        'rdf-canonize-native',
-        '@mattrglobal/node-bbs-signatures',
-        '@mattrglobal/bbs-signatures',
-      ];
-    }
 
     // Ignore specific modules that cause issues
     config.plugins.push(

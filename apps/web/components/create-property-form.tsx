@@ -194,21 +194,44 @@ export function CreatePropertyForm() {
       const PropertySaleABI = await import('@/lib/contracts/PropertySale.json');
       const DividendDistributorABI = await import('@/lib/contracts/DividendDistributor.json');
 
-      const pricePerShare = parseFloat(formData.totalValue) / parseInt(formData.totalShares);
+      // Compute price per share using integer math in wei to avoid NaN/Infinity/rounding
+      const totalValueWei = ethers.utils.parseUnits((formData.totalValue || "0").toString(), 18);
+      const sharesBN = ethers.BigNumber.from(formData.totalShares || "0");
+
+      if (sharesBN.lte(0)) {
+        throw new Error('Total Shares must be greater than 0');
+      }
+      if (totalValueWei.lte(0)) {
+        throw new Error('Total Property Value (HBAR) must be greater than 0');
+      }
+
+      const pricePerWholeTokenInWei = totalValueWei.div(sharesBN);
       const saleDuration = 30 * 24 * 60 * 60; // 30 days in seconds
 
       // Deploy PropertySale contract
-      console.log('📝 Step 1/2: Deploying PropertySale Contract...');
+      console.log('📝 Step 1/3: Deploying PropertySale Contract...');
       const PropertySaleFactory = new ethers.ContractFactory(
         PropertySaleABI.abi,
         PropertySaleABI.bytecode,
         signer
       );
 
+      // PropertySale expects total shares in wei (18 decimals) to match ERC20 token format
+      const totalSharesInWei = ethers.utils.parseUnits(formData.totalShares, 18);
+      
+      // pricePerWholeTokenInWei is already computed as integer division above
+      
+      console.log('📊 Deploying PropertySale with:');
+      console.log('   Token:', formData.tokenId);
+      console.log('   Price per whole token (HBAR):', ethers.utils.formatEther(pricePerWholeTokenInWei));
+      console.log('   Price per whole token (wei):', pricePerWholeTokenInWei.toString());
+      console.log('   Total shares:', formData.totalShares, 'tokens');
+      console.log('   Total shares (wei):', totalSharesInWei.toString());
+      
       const propertySale = await PropertySaleFactory.deploy(
         formData.tokenId,
-        ethers.utils.parseEther(pricePerShare.toString()),
-        parseInt(formData.totalShares),
+        pricePerWholeTokenInWei, // ✅ Price in wei per whole token
+        totalSharesInWei, // ✅ Total shares in wei format to match ERC20 decimals
         saleDuration
       );
 
@@ -216,8 +239,86 @@ export function CreatePropertyForm() {
       const saleAddress = propertySale.address;
       console.log('✅ PropertySale deployed:', saleAddress);
 
+      // Sanity check on-chain constructor state to prevent unit mismatches
+      try {
+        const onChainPrice: any = await propertySale.pricePerShare();
+        const onChainTotalShares: any = await propertySale.totalShares();
+        console.log('🔎 On-chain pricePerShare (wei):', onChainPrice.toString());
+        console.log('🔎 On-chain totalShares (wei):', onChainTotalShares.toString());
+
+        if (!onChainPrice.eq(pricePerWholeTokenInWei)) {
+          throw new Error(
+            `Deployed pricePerShare mismatch. expected=${pricePerWholeTokenInWei.toString()} got=${onChainPrice.toString()}`
+          );
+        }
+        if (!onChainTotalShares.eq(totalSharesInWei)) {
+          throw new Error(
+            `Deployed totalShares mismatch. expected=${totalSharesInWei.toString()} got=${onChainTotalShares.toString()}`
+          );
+        }
+      } catch (e) {
+        console.error('❌ Deployment sanity check failed:', e);
+        throw new Error(
+          'Deployment sanity check failed (price/totalShares). Please re-enter values and try again.'
+        );
+      }
+
+      // Transfer tokens to PropertySale contract so it can sell them
+      console.log('📝 Step 2/3: Transferring tokens to PropertySale contract...');
+      const TokenABI = [
+        'function transfer(address to, uint256 amount) returns (bool)',
+        'function balanceOf(address account) view returns (uint256)',
+        'function approve(address spender, uint256 amount) returns (bool)'
+      ];
+      const tokenContract = new ethers.Contract(formData.tokenId, TokenABI, signer);
+
+      // Check deployer's balance
+      const deployerAddress = await signer.getAddress();
+      const balance = await tokenContract.balanceOf(deployerAddress);
+      
+      // Convert totalShares to wei (18 decimals) to match token balance format
+      const tokensNeeded = ethers.utils.parseUnits(formData.totalShares, 18);
+      
+      // Format balances for display (convert from wei to whole tokens)
+      const balanceInTokens = ethers.utils.formatUnits(balance, 18);
+      const neededInTokens = formData.totalShares;
+      
+      console.log('📊 Your token balance:', balanceInTokens, 'tokens');
+      console.log('📊 Tokens needed:', neededInTokens, 'tokens');
+      console.log('📊 Balance (in wei):', balance.toString());
+      console.log('📊 Needed (in wei):', tokensNeeded.toString());
+
+      // Validate sufficient balance
+      if (balance.lt(tokensNeeded)) {
+        throw new Error(
+          `Insufficient token balance. You have ${balanceInTokens} tokens but need ${neededInTokens}. ` +
+          `Please make sure you own the tokens from the token contract address you provided (${formData.tokenId}). ` +
+          `You may need to create a new equity token first using the "Create Equity Token" tab.`
+        );
+      }
+
+      // Transfer all shares to PropertySale contract (in wei)
+      const transferTx = await tokenContract.transfer(
+        saleAddress,
+        tokensNeeded
+      );
+      await transferTx.wait();
+      console.log('✅ Tokens transferred to PropertySale contract');
+
+      // Verify the transfer
+      const saleContractBalance = await tokenContract.balanceOf(saleAddress);
+      const saleBalanceInTokens = ethers.utils.formatUnits(saleContractBalance, 18);
+      console.log('✅ PropertySale contract now holds:', saleBalanceInTokens, 'tokens');
+      console.log('✅ Balance in wei:', saleContractBalance.toString());
+
+      if (!saleContractBalance.eq(tokensNeeded)) {
+        throw new Error(
+          `Token transfer mismatch. expected=${tokensNeeded.toString()} got=${saleContractBalance.toString()}`
+        );
+      }
+
       // Deploy DividendDistributor contract
-      console.log('📝 Step 2/2: Deploying DividendDistributor Contract...');
+      console.log('📝 Step 3/3: Deploying DividendDistributor Contract...');
       const DividendDistributorFactory = new ethers.ContractFactory(
         DividendDistributorABI.abi,
         DividendDistributorABI.bytecode,
@@ -419,21 +520,31 @@ export function CreatePropertyForm() {
             <div className="rounded-2xl p-6 space-y-4 bg-white border-2 border-emerald-200">
               <div className="space-y-3">
                 <Label htmlFor="tokenId" className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                  Equity Token ID *
+                  Equity Token Address *
                   <Badge className="bg-emerald-600 text-white px-2 py-1 text-xs font-semibold">REQUIRED</Badge>
                 </Label>
                 <Input
                   id="tokenId"
                   value={formData.tokenId}
                   onChange={(e) => handleInputChange("tokenId", e.target.value)}
-                  placeholder="Enter the Token ID of your Equity Token (e.g., 0x1234...)"
+                  placeholder="Enter the token contract address (e.g., 0x1234...)"
                   required
                   className="h-14 text-lg font-semibold border-2 border-emerald-300 rounded-xl focus:border-emerald-500 focus:ring-emerald-500 bg-white shadow-md placeholder:text-emerald-400 text-emerald-800"
                 />
-                <p className="text-sm text-emerald-700 font-medium bg-emerald-100 p-3 rounded-lg border border-emerald-200">
-                  💡 This Token ID must match an existing Equity Token created in the "Create Equity Token" tab.
-                  This links your property listing to the tokenized shares.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-emerald-700 font-medium bg-emerald-100 p-3 rounded-lg border border-emerald-200">
+                    💡 <strong>Important:</strong> This address must match an existing Equity Token that YOU OWN.
+                  </p>
+                  <p className="text-xs text-amber-700 font-medium bg-amber-50 p-3 rounded-lg border border-amber-200">
+                    ⚠️ <strong>Before creating a property:</strong><br/>
+                    1. Go to the "Create Equity Token" tab<br/>
+                    2. Create a new equity token with your desired shares<br/>
+                    3. Copy the token address from the created token<br/>
+                    4. Paste it here<br/><br/>
+                    <strong>You must own at least {formData.totalShares || '[number]'} tokens</strong> from that token contract, 
+                    which will be transferred to the PropertySale contract for users to purchase.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -536,7 +647,7 @@ export function CreatePropertyForm() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <Label htmlFor="totalValue" className="text-base font-semibold text-slate-700">
-                    Total Property Value ($) *
+                    Total Property Value (HBAR) *
                   </Label>
                   <Input
                     id="totalValue"
@@ -582,7 +693,7 @@ export function CreatePropertyForm() {
                 <div className="bg-white p-6 rounded-2xl border border-emerald-200 shadow-sm">
                   <div className="text-sm font-medium text-slate-600 mb-2">Price per share:</div>
                   <div className="text-3xl font-bold text-emerald-600">
-                    ${(Number.parseInt(formData.totalValue) / Number.parseInt(formData.totalShares)).toFixed(2)}
+                    {(Number.parseFloat(formData.totalValue) / Number.parseFloat(formData.totalShares)).toFixed(6)} HBAR
                   </div>
                 </div>
               )}

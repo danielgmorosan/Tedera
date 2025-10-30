@@ -135,7 +135,7 @@ export function BuyPanel({ property }: BuyPanelProps) {
               Available: {availableShares.toLocaleString()}
             </span>
             <span className="text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full font-medium">
-              ${pricePerShare}/share
+              {pricePerShare} HBAR/share
             </span>
           </div>
         </div>
@@ -155,7 +155,7 @@ export function BuyPanel({ property }: BuyPanelProps) {
             <Separator className="bg-slate-200" />
             <div className="flex justify-between items-center text-lg">
               <span className="font-semibold text-slate-900">Total Cost:</span>
-              <span className="font-bold text-emerald-600 text-xl">${totalCost.toLocaleString()}</span>
+              <span className="font-bold text-emerald-600 text-xl">{totalCost.toLocaleString()} HBAR</span>
             </div>
           </div>
         )}
@@ -184,7 +184,7 @@ export function BuyPanel({ property }: BuyPanelProps) {
           ) : (
             <>
               <Wallet className="h-4 w-4 mr-2" />
-              Purchase ${totalCost.toLocaleString()}
+              Purchase {totalCost.toLocaleString()} HBAR
             </>
           )}
         </Button>

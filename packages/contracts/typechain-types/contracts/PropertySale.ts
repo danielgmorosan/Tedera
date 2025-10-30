@@ -36,6 +36,7 @@ export interface PropertySaleInterface extends utils.Interface {
     "pricePerShare()": FunctionFragment;
     "propertyToken()": FunctionFragment;
     "purchased(address)": FunctionFragment;
+    "quoteCost(uint256)": FunctionFragment;
     "remainingShares()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "saleActive()": FunctionFragment;
@@ -56,6 +57,7 @@ export interface PropertySaleInterface extends utils.Interface {
       | "pricePerShare"
       | "propertyToken"
       | "purchased"
+      | "quoteCost"
       | "remainingShares"
       | "renounceOwnership"
       | "saleActive"
@@ -88,6 +90,10 @@ export interface PropertySaleInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "purchased",
     values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "quoteCost",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "remainingShares",
@@ -145,6 +151,7 @@ export interface PropertySaleInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "purchased", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "quoteCost", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "remainingShares",
     data: BytesLike
@@ -293,6 +300,11 @@ export interface PropertySale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
+    quoteCost(
+      shares: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     remainingShares(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     renounceOwnership(
@@ -344,6 +356,11 @@ export interface PropertySale extends BaseContract {
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
+  quoteCost(
+    shares: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   remainingShares(overrides?: CallOverrides): Promise<BigNumber>;
 
   renounceOwnership(
@@ -392,6 +409,11 @@ export interface PropertySale extends BaseContract {
 
     purchased(
       arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    quoteCost(
+      shares: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -478,6 +500,11 @@ export interface PropertySale extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    quoteCost(
+      shares: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     remainingShares(overrides?: CallOverrides): Promise<BigNumber>;
 
     renounceOwnership(
@@ -527,6 +554,11 @@ export interface PropertySale extends BaseContract {
 
     purchased(
       arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    quoteCost(
+      shares: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

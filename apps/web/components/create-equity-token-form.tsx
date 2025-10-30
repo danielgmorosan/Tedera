@@ -92,7 +92,7 @@ export function CreateEquityTokenForm() {
     tokenDecimals: "18",
     isin: "",
     nominalValue: "",
-    currency: "USD",
+    currency: "HBAR",
     numberOfShares: "",
     totalValue: "",
     chosenRights: [],
@@ -239,10 +239,16 @@ export function CreateEquityTokenForm() {
       );
 
       // Deploy the token with all parameters
+      // Convert numberOfShares to wei (18 decimals) since ERC20 uses 18 decimals by default
+      const totalSupplyInWei = ethers.utils.parseUnits(formData.numberOfShares, 18);
+      
+      console.log('📊 Total supply (whole tokens):', formData.numberOfShares);
+      console.log('📊 Total supply (in wei):', totalSupplyInWei.toString());
+      
       const token = await TokenFactory.deploy(
         formData.tokenName,
         formData.tokenSymbol,
-        formData.numberOfShares,
+        totalSupplyInWei, // ✅ Now properly converted to wei with 18 decimals
         formData.isin,
         ethers.utils.parseEther(formData.nominalValue), // Convert to wei
         formData.currency,
@@ -722,7 +728,7 @@ export function CreateEquityTokenForm() {
                   htmlFor="nominalValue"
                   className="text-sm font-medium text-slate-700"
                 >
-                  Nominal Value
+                  Nominal Value (HBAR)
                 </Label>
                 <Input
                   id="nominalValue"
@@ -740,28 +746,25 @@ export function CreateEquityTokenForm() {
               </div>
 
               <div className="space-y-2">
-                <Label
-                  htmlFor="currency"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Currency
-                </Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) =>
-                    handleInputChange("currency", value)
-                  }
-                >
-                  <SelectTrigger className="rounded-xl border-slate-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="HBAR">HBAR</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Label
+                htmlFor="currency"
+                className="text-sm font-medium text-slate-700"
+              >
+                Currency
+              </Label>
+              <Select
+                value={formData.currency}
+                onValueChange={(value) =>
+                  handleInputChange("currency", value)
+                }
+              >
+                <SelectTrigger className="rounded-xl border-slate-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HBAR">HBAR</SelectItem>
+                </SelectContent>
+              </Select>
               </div>
             </div>
 
@@ -771,7 +774,7 @@ export function CreateEquityTokenForm() {
                   htmlFor="numberOfShares"
                   className="text-sm font-medium text-slate-700"
                 >
-                  Number of Shares
+                  Number of Shares (whole tokens)
                 </Label>
                 <Input
                   id="numberOfShares"
@@ -795,7 +798,7 @@ export function CreateEquityTokenForm() {
                   htmlFor="totalValue"
                   className="text-sm font-medium text-slate-700"
                 >
-                  Total Value
+                  Total Value (HBAR)
                 </Label>
                 <Input
                   id="totalValue"

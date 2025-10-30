@@ -1,0 +1,19 @@
+{
+  "network": "unknown",
+  "chainId": 296,
+  "deployer": "0x31Ed87b9De52bc6F73c1DC853f919Fee8Ba24b56",
+  "timestamp": "2025-10-30T07:40:39.516Z",
+  "contracts": {
+    "PropertySale": {
+      "address": "0xd477A4B693B06ef37F32C42EADb5a31Fe4b721a1",
+      "tokenAddress": "0x670c1E3977F9C52446eF405E6011F3405FD8bF46",
+      "pricePerShare": "1000000000000000000",
+      "totalShares": 10,
+      "saleDuration": 0
+    },
+    "DividendDistributor": {
+      "address": "0x0cd820dB6cBc72F7cd7c16AFae65E6534Af18105",
+      "tokenAddress": "0x670c1E3977F9C52446eF405E6011F3405FD8bF46"
+    }
+  }
+}

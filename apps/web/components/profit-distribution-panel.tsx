@@ -284,15 +284,15 @@ export function ProfitDistributionPanel() {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
-            {mockProperties.map((property) => {
-              const Icon = typeIcons[property.type]
+            {properties.map((property) => {
+              const Icon = typeIcons[property.type] || Home
               return (
-                <Card key={property.id}>
+                <Card key={property._id}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3 mb-3">
                       <Icon className="h-5 w-5 mt-1" />
                       <div>
-                        <h4 className="font-semibold text-foreground">{property.title}</h4>
+                        <h4 className="font-semibold text-foreground">{property.name}</h4>
                         <p className="text-sm text-muted-foreground capitalize">
                           {property.type === "real-estate" ? "Real Estate" : property.type}
                         </p>
@@ -300,15 +300,25 @@ export function ProfitDistributionPanel() {
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <div className="text-muted-foreground">Investors</div>
-                        <div className="font-semibold">{property.activeInvestors}</div>
+                        <div className="text-muted-foreground">Total Shares</div>
+                        <div className="font-semibold">{property.totalShares.toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Total Distributed</div>
-                        <div className="font-semibold text-green-600">
-                          ${property.totalDistributed.toLocaleString()}
+                        <div className="text-muted-foreground">Contract Address</div>
+                        <div className="font-mono text-xs">
+                          {property.dividendContractAddress ?
+                            `${property.dividendContractAddress.slice(0, 10)}...` :
+                            'Not deployed'}
                         </div>
                       </div>
+                    </div>
+                    <div className="mt-3">
+                      <Badge variant="outline" className={property.dividendContractAddress ?
+                        "bg-green-100 border-green-300 text-green-700" :
+                        "bg-gray-100 border-gray-300 text-gray-700"}>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {property.dividendContractAddress ? 'Active' : 'Pending'}
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>

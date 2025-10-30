@@ -56,10 +56,13 @@ async function main() {
 
   console.log("\n🚀 Deploying PropertySale contract...");
   const PropertySale = await ethers.getContractFactory("PropertySale");
+  const totalSharesWei = ethers.utils.parseUnits(config.totalShares.toString(), 18);
+  console.log("   totalShares (human):", config.totalShares);
+  console.log("   totalShares (wei):", totalSharesWei.toString());
   const propertySale = await PropertySale.deploy(
     config.tokenAddress,
     config.pricePerShare,
-    config.totalShares,
+    totalSharesWei,
     config.saleDuration
   );
 
