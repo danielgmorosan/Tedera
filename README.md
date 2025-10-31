@@ -184,7 +184,7 @@ There's a more detailed deployment guide in `docs/DEPLOYMENT_GUIDE.md` if you ru
 ## Useful links
 
 - [Certificate](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing) - One Team member that taught us in private
-- [Pitch Deck](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing) - Learn more about our Full PLAN with Hedera
+- [Pitch Deck](https://drive.google.com/file/d/1nW9xg74oApX4D53LXfK5LmQxQ1OIkynB/view?usp=sharing) - Learn more about our Full PLAN with Hedera
 - [Video](https://www.youtube.com/watch?v=u0k26k7moz4&t=186s) — Get some popcorn and enjoy!
 
 
