@@ -365,10 +365,17 @@ export function CreatePropertyForm() {
         throw new Error('Authentication required. Please ensure your wallet is connected and you are authenticated.');
       }
       
+      // Ensure images array is always sent, even if empty
+      // If we have uploaded images, use them; otherwise include the cover image if available
+      const imagesArray = uploadedImageUrls.length > 0 
+        ? uploadedImageUrls 
+        : (mainImageUrl && mainImageUrl !== "/placeholder.svg" ? [mainImageUrl] : []);
+
       console.log('📤 Sending property data with images:', {
         image: mainImageUrl,
-        images: uploadedImageUrls,
-        imageCount: uploadedImageUrls.length
+        images: imagesArray,
+        imageCount: imagesArray.length,
+        uploadedCount: uploadedImageUrls.length
       });
 
       const response = await fetch('/api/properties', {
@@ -388,7 +395,7 @@ export function CreatePropertyForm() {
           dividendContractAddress: dividendAddress, // Real dividend contract address
           type: formData.type,
           image: mainImageUrl,
-          images: uploadedImageUrls, // Send all uploaded images
+          images: imagesArray, // Always send array (either uploaded images or fallback to cover image)
           expectedYield: parseFloat(formData.expectedYield) || 8.5,
           sustainabilityScore: parseInt(formData.sustainabilityScore) || 85,
           tags: formData.tags,
