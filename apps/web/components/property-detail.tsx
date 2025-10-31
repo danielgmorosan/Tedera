@@ -24,6 +24,7 @@ import {
   Share,
   Heart,
   X,
+  ImageIcon,
 } from "lucide-react";
 
 interface Property {
@@ -145,42 +146,15 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     }, 1000);
   };
 
-  const allImages = [
-    {
-      src:
-        property.image ||
-        "/stunning-aerial-view-of-pristine-amazon-rainforest.jpg",
-      alt: `${property.title} - Main view`,
-    },
-    {
-      src: "/colorful-exotic-birds-and-wildlife-in-amazon-rainf.jpg",
-      alt: "Amazon rainforest wildlife and biodiversity",
-    },
-    {
-      src: "/dense-amazon-rainforest-canopy-from-below--towerin.jpg",
-      alt: "Amazon rainforest canopy from ground level",
-    },
-    {
-      src: "/winding-amazon-river-through-rainforest--crystal-c.jpg",
-      alt: "Amazon river system through rainforest",
-    },
-    {
-      src: "/conservation-scientists-researching-in-amazon-rain.jpg",
-      alt: "Conservation research and protection activities",
-    },
-    {
-      src: "/amazon-rainforest-waterfall-cascading-through-lush.jpg",
-      alt: "Amazon rainforest waterfall and natural pools",
-    },
-    {
-      src: "/indigenous-amazon-community-sustainable-practices-.jpg",
-      alt: "Indigenous community forest stewardship",
-    },
-    {
-      src: "/amazon-rainforest-at-sunset--golden-hour-lighting-.jpg",
-      alt: "Amazon rainforest at golden hour sunset",
-    },
-  ];
+  // Only show uploaded images, no hardcoded defaults
+  const allImages = property.image
+    ? [
+        {
+          src: property.image,
+          alt: `${property.title} - Main view`,
+        },
+      ]
+    : [];
 
   const mockStats = {
     area: property.area || "1,000 hectares",
@@ -234,95 +208,26 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="grid grid-cols-4 gap-2 h-64 md:h-80">
-                    {/* Main large image */}
-                    <div
-                      className="col-span-2 relative group cursor-pointer"
-                      onClick={() => setShowPhotoModal(true)}
-                    >
-                      <img
-                        src={
-                          property.image ||
-                          "/stunning-aerial-view-of-pristine-amazon-rainforest.jpg" ||
-                          "/colorful-exotic-birds-and-wildlife-in-amazon-rainf.jpg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg"
-                        }
-                        alt={property.title}
-                        className="w-full h-full object-cover rounded-l-2xl hover:brightness-95 transition-all duration-200"
-                      />
-                    </div>
-
-                    {/* Grid of smaller images */}
-                    <div className="col-span-2 grid grid-cols-2 gap-2">
+                    {/* Main image - only show if image exists */}
+                    {property.image ? (
                       <div
-                        className="relative group cursor-pointer"
-                        onClick={() => setShowPhotoModal(true)}
+                        className="col-span-4 relative group cursor-pointer"
+                        onClick={() => allImages.length > 0 && setShowPhotoModal(true)}
                       >
                         <img
-                          src="/colorful-exotic-birds-and-wildlife-in-amazon-rainf.jpg"
-                          alt="Amazon rainforest wildlife and exotic birds"
-                          className="w-full h-full object-cover hover:brightness-95 transition-all duration-200"
+                          src={property.image}
+                          alt={property.title}
+                          className="w-full h-full object-cover rounded-2xl hover:brightness-95 transition-all duration-200"
                         />
                       </div>
-                      <div
-                        className="relative group cursor-pointer"
-                        onClick={() => setShowPhotoModal(true)}
-                      >
-                        <img
-                          src="/dense-amazon-rainforest-canopy-from-below--towerin.jpg"
-                          alt="Amazon rainforest canopy from ground level"
-                          className="w-full h-full object-cover hover:brightness-95 transition-all duration-200"
-                        />
-                      </div>
-                      <div
-                        className="relative group cursor-pointer"
-                        onClick={() => setShowPhotoModal(true)}
-                      >
-                        <img
-                          src="/winding-amazon-river-through-rainforest--crystal-c.jpg"
-                          alt="Amazon river winding through rainforest"
-                          className="w-full h-full object-cover hover:brightness-95 transition-all duration-200"
-                        />
-                      </div>
-                      <div
-                        className="relative group cursor-pointer"
-                        onClick={() => setShowPhotoModal(true)}
-                      >
-                        <img
-                          src="/conservation-scientists-researching-in-amazon-rain.jpg"
-                          alt="Conservation research activities in Amazon"
-                          className="w-full h-full object-cover rounded-br-2xl hover:brightness-95 transition-all duration-200"
-                        />
-                        {/* Show all photos button */}
-                        <div className="absolute inset-0 bg-black/20 rounded-br-2xl flex items-center justify-center">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="bg-white/90 hover:bg-white text-slate-900 font-medium px-4 py-2 rounded-lg shadow-sm backdrop-blur-sm border border-white/20 hover:shadow-md transition-all duration-200"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent event bubbling
-                              setShowPhotoModal(true);
-                            }}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <div className="grid grid-cols-3 gap-0.5 w-4 h-4">
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                                <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                              </div>
-                              <span className="text-sm">Show all photos</span>
-                            </div>
-                          </Button>
+                    ) : (
+                      <div className="col-span-4 flex items-center justify-center bg-slate-100 rounded-2xl">
+                        <div className="text-center text-slate-400">
+                          <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                          <p>No images available</p>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Property type and sustainability badges */}
@@ -680,15 +585,24 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allImages.map((image, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={image.src || "/placeholder.svg"}
-                    alt={image.alt}
-                    className="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-200"
-                  />
+              {allImages.length > 0 ? (
+                allImages.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-200"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 flex items-center justify-center h-64 text-slate-400">
+                  <div className="text-center">
+                    <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                    <p>No images available</p>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
