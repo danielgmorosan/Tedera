@@ -3,7 +3,7 @@
 
 # Tedera - Decentralized RWA Marketplace
 
-A decentralized marketplace for tokenizing real estate properties. Tedera allows retail investors to buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools. visit our [website](tedera.xyz) 
+A decentralized marketplace for tokenizing real estate properties. Tedera allows retail investors to buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools. visit our [website]([tedera.xyz](https://www.tedera.xyz/)) 
 
 [Google Drive w/ Certificate and Other Content](https://drive.google.com/drive/u/0/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26)
 
