@@ -121,8 +121,8 @@ export default function Sidebar() {
   return (
     <div 
       className={cn(
-        "flex flex-col items-start relative bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden mt-2 mb-2",
-        "h-[calc(100vh-1rem)]",
+        "flex flex-col items-start relative bg-gray-100 transition-all duration-300 ease-in-out overflow-hidden",
+        "h-full",
         isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
       )}
     >
@@ -134,9 +134,9 @@ export default function Sidebar() {
         <Link
           href="/"
           className={cn(
-            "relative rounded-[8px] shrink-0 flex items-center justify-center hover:opacity-90 transition-all duration-300 cursor-pointer overflow-hidden",
+            "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 transition-all duration-300 cursor-pointer overflow-hidden",
             "h-[36px]",
-            isExpanded ? "w-full mb-2" : "size-[36px]"
+            isExpanded ? "w-full mb-2 justify-start" : "size-[36px] justify-center"
           )}
           data-name="Icons"
           data-node-id="3:26970"
@@ -144,8 +144,8 @@ export default function Sidebar() {
           {/* Square Logo (Collapsed View) */}
           <div
             className={cn(
-              "absolute inset-0 bg-[#080912] rounded-[8px] flex items-center justify-center transition-opacity duration-300",
-              isExpanded ? "opacity-0" : "opacity-100"
+              "absolute inset-0 bg-[#080912] rounded-[8px] flex items-center justify-center transition-opacity duration-300 pointer-events-none",
+              isExpanded ? "opacity-0 invisible" : "opacity-100 visible"
             )}
           >
             <svg
@@ -235,15 +235,15 @@ export default function Sidebar() {
           {/* Tedera Logo (Expanded View) */}
           <div
             className={cn(
-              "absolute inset-0 flex items-center justify-center transition-opacity duration-300",
-              isExpanded ? "opacity-100" : "opacity-0"
+              "flex items-center transition-opacity duration-300",
+              isExpanded ? "opacity-100 visible" : "opacity-0 invisible absolute inset-0"
             )}
           >
             <Image
-              src="/logo/logo tedera.svg"
+              src="/logo/logo (1).svg"
               alt="Tedera Logo"
-              width={99}
-              height={41}
+              width={204}
+              height={55}
               className="h-[36px] w-auto object-contain"
               priority
             />

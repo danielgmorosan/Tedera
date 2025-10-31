@@ -79,6 +79,15 @@ const typeColors = {
   "real-estate": "text-blue-600",
 };
 
+interface Distribution {
+  _id: string;
+  property: string;
+  totalAmount: number;
+  description?: string;
+  executedAt: string | Date;
+  createdAt?: string | Date;
+}
+
 export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -91,6 +100,8 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     availableShares: number;
     ownedPercentage: number;
   } | null>(null);
+  const [distributions, setDistributions] = useState<Distribution[]>([]);
+  const [loadingDistributions, setLoadingDistributions] = useState(true);
   
   const Icon = typeIcons[property.type];
   const iconColor = typeColors[property.type];
@@ -136,6 +147,35 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     fetchOwnershipData();
   }, [property.saleContractAddress, provider]);
 
+  // Fetch distribution data
+  useEffect(() => {
+    const fetchDistributions = async () => {
+      if (!property.id) {
+        setLoadingDistributions(false);
+        return;
+      }
+
+      try {
+        setLoadingDistributions(true);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('hedera-auth-token') : null;
+        const response = await fetch(`/api/distributions/property/${property.id}`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setDistributions(data.distributions || []);
+        }
+      } catch (error) {
+        console.error('Error fetching distributions:', error);
+      } finally {
+        setLoadingDistributions(false);
+      }
+    };
+
+    fetchDistributions();
+  }, [property.id]);
+
   // Use real data if available, otherwise fallback to property.availableSupply
   const ownedPercentage = realOwnership 
     ? realOwnership.ownedPercentage 
@@ -167,6 +207,88 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     }
     return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
   };
+
+  // Helper function to format HBAR for smaller amounts
+  const formatHBAR = (amount: number): string => {
+    const rounded = Math.round(amount * 100) / 100;
+    if (rounded % 1 === 0) {
+      return `${Math.round(rounded)} HBAR`;
+    }
+    return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+  };
+
+  // Get last distribution
+  const lastDistribution = distributions.length > 0 
+    ? distributions[0] 
+    : null;
+
+  // Calculate next distribution date (3 months after last distribution, or use property.nextDistribution)
+  const getNextDistributionDate = (): string => {
+    if (property.nextDistribution) {
+      return property.nextDistribution;
+    }
+    
+    if (lastDistribution?.executedAt) {
+      const lastDate = new Date(lastDistribution.executedAt);
+      const nextDate = new Date(lastDate);
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      
+      const month = nextDate.toLocaleDateString('en-US', { month: 'short' });
+      const year = nextDate.getFullYear();
+      return `${month} ${year}`;
+    }
+    
+    // Default to Q2 2024 if no data available
+    return "Q2 2024";
+  };
+
+  // Calculate distribution history for last 12 months
+  const getDistributionHistory = () => {
+    const now = new Date();
+    const twelveMonthsAgo = new Date(now);
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    
+    const monthlyData: { [key: string]: number } = {};
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Initialize all months with 0
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now);
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyData[monthKey] = 0;
+    }
+    
+    // Sum distributions by month
+    distributions.forEach(dist => {
+      const distDate = new Date(dist.executedAt || dist.createdAt || Date.now());
+      if (distDate >= twelveMonthsAgo && distDate <= now) {
+        const monthKey = `${distDate.getFullYear()}-${String(distDate.getMonth() + 1).padStart(2, '0')}`;
+        if (monthlyData[monthKey] !== undefined) {
+          monthlyData[monthKey] += dist.totalAmount || 0;
+        }
+      }
+    });
+    
+    // Get max value for scaling
+    const values = Object.values(monthlyData);
+    const maxValue = Math.max(...values, 1); // Avoid divide by zero
+    
+    // Format for chart display
+    const chartData = Object.keys(monthlyData).map(key => {
+      const date = new Date(key);
+      const monthIndex = date.getMonth();
+      return {
+        month: monthNames[monthIndex],
+        amount: monthlyData[key],
+        height: (monthlyData[key] / maxValue) * 100,
+      };
+    });
+    
+    return chartData;
+  };
+
+  const distributionHistory = getDistributionHistory();
 
   const handleShare = async () => {
     const shareData = {
@@ -249,13 +371,12 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     alt: `${property.title} - Image ${index + 1}`,
   }));
 
-  const mockStats = {
-    area: property.area || "1,000 hectares",
-    established: property.established || "2023",
-    totalShares: property.totalShares || 10000,
-    pricePerShare: property.pricePerShare || 250,
-    lastDistribution: property.lastDistribution || "$12.50",
-    nextDistribution: property.nextDistribution || "Q2 2024",
+  // Calculate real stats from property data
+  const stats = {
+    area: property.area || "N/A",
+    established: property.established || "N/A",
+    totalShares: totalShares,
+    pricePerShare: pricePerShare,
   };
 
   return (
@@ -438,7 +559,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-100 hover:border-slate-200 transition-all duration-200 hover:shadow-sm">
                     <div className="text-lg font-semibold text-slate-900">
-                      {mockStats.area}
+                      {stats.area}
                     </div>
                     <div className="text-sm text-slate-600 font-medium">
                       Total Area
@@ -446,7 +567,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                   </div>
                   <div className="text-center p-4 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-100 hover:border-slate-200 transition-all duration-200 hover:shadow-sm">
                     <div className="text-lg font-semibold text-slate-900">
-                      {mockStats.established}
+                      {stats.established}
                     </div>
                     <div className="text-sm text-slate-600 font-medium">
                       Established
@@ -454,7 +575,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                   </div>
                   <div className="text-center p-4 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-100 hover:border-slate-200 transition-all duration-200 hover:shadow-sm">
                     <div className="text-lg font-semibold text-slate-900">
-                      {mockStats.totalShares.toLocaleString()}
+                      {stats.totalShares.toLocaleString()}
                     </div>
                     <div className="text-sm text-slate-600 font-medium">
                       Total Shares
@@ -462,7 +583,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                   </div>
                   <div className="text-center p-4 bg-slate-50/80 hover:bg-slate-100/80 rounded-xl border border-slate-100 hover:border-slate-200 transition-all duration-200 hover:shadow-sm">
                     <div className="text-lg font-semibold text-slate-900">
-                      ${mockStats.pricePerShare}
+                      {formatHBAR(stats.pricePerShare)}
                     </div>
                     <div className="text-sm text-slate-600 font-medium">
                       Price per Share
@@ -577,7 +698,13 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                     Last Distribution
                   </span>
                   <span className="font-semibold text-slate-900">
-                    {mockStats.lastDistribution}
+                    {loadingDistributions ? (
+                      <span className="text-slate-400">Loading...</span>
+                    ) : lastDistribution ? (
+                      formatHBAR(lastDistribution.totalAmount || 0)
+                    ) : (
+                      property.lastDistribution || "No distributions yet"
+                    )}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-slate-50/80 hover:bg-slate-100/80 rounded-lg border border-slate-100 hover:border-slate-200 transition-all duration-200">
@@ -585,7 +712,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                     Next Distribution
                   </span>
                   <span className="font-semibold text-slate-900">
-                    {mockStats.nextDistribution}
+                    {getNextDistributionDate()}
                   </span>
                 </div>
                 <div className="pt-4 border-t border-slate-200">
@@ -593,62 +720,42 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                     Distribution History (12 months)
                   </div>
                   <div className="h-32 bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-all duration-200">
-                    <div className="h-full flex items-end justify-between space-x-1">
-                      {/* Mock chart bars */}
-                      <div
-                        className="flex-1 bg-emerald-100 rounded-t-sm"
-                        style={{ height: "60%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-200 rounded-t-sm"
-                        style={{ height: "80%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-300 rounded-t-sm"
-                        style={{ height: "45%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-200 rounded-t-sm"
-                        style={{ height: "70%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-400 rounded-t-sm"
-                        style={{ height: "90%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-300 rounded-t-sm"
-                        style={{ height: "65%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-200 rounded-t-sm"
-                        style={{ height: "55%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-300 rounded-t-sm"
-                        style={{ height: "75%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-400 rounded-t-sm"
-                        style={{ height: "85%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-500 rounded-t-sm"
-                        style={{ height: "95%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-400 rounded-t-sm"
-                        style={{ height: "80%" }}
-                      ></div>
-                      <div
-                        className="flex-1 bg-emerald-300 rounded-t-sm"
-                        style={{ height: "70%" }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-slate-400 mt-2">
-                      <span>Jan</span>
-                      <span>Jun</span>
-                      <span>Dec</span>
-                    </div>
+                    {loadingDistributions ? (
+                      <div className="h-full flex items-center justify-center">
+                        <span className="text-slate-400 text-sm">Loading chart...</span>
+                      </div>
+                    ) : distributionHistory.length > 0 ? (
+                      <>
+                        <div className="h-full flex items-end justify-between space-x-1">
+                          {distributionHistory.map((data, index) => {
+                            const intensity = Math.min(data.height / 100, 1);
+                            const colorClass = 
+                              intensity > 0.8 ? 'bg-emerald-500' :
+                              intensity > 0.6 ? 'bg-emerald-400' :
+                              intensity > 0.4 ? 'bg-emerald-300' :
+                              intensity > 0.2 ? 'bg-emerald-200' :
+                              'bg-emerald-100';
+                            return (
+                              <div
+                                key={index}
+                                className={`flex-1 ${colorClass} rounded-t-sm transition-all duration-300 hover:opacity-80`}
+                                style={{ height: `${Math.max(data.height, 5)}%` }}
+                                title={`${data.month}: ${formatHBAR(data.amount)}`}
+                              ></div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between text-xs text-slate-400 mt-2">
+                          <span>{distributionHistory[0]?.month || 'Jan'}</span>
+                          <span>{distributionHistory[Math.floor(distributionHistory.length / 2)]?.month || 'Jun'}</span>
+                          <span>{distributionHistory[distributionHistory.length - 1]?.month || 'Dec'}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <span className="text-slate-400 text-sm">No distribution data available</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
