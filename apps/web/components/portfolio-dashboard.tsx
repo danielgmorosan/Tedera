@@ -58,7 +58,9 @@ export default function PortfolioDashboard() {
         const userHoldings = await fetchUserPortfolio(walletAccount, walletProvider);
         setHoldings(userHoldings);
 
-        const portfolioMetrics = calculatePortfolioMetrics(userHoldings);
+        // Get auth token for fetching historical data
+        const token = typeof window !== 'undefined' ? localStorage.getItem('hedera-auth-token') : null;
+        const portfolioMetrics = await calculatePortfolioMetrics(userHoldings, token || undefined);
         setMetrics(portfolioMetrics);
       } catch (error) {
         console.error('Error loading portfolio:', error);

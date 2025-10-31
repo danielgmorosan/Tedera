@@ -107,6 +107,16 @@ const mockHoldings: HoldingData[] = [
   },
 ];
 
+// Helper function to format HBAR amounts - rounds to 2 decimals max, removes trailing zeros
+const formatHBAR = (amount: number): string => {
+  const rounded = Math.round(amount * 100) / 100; // Round to 2 decimals
+  if (rounded % 1 === 0) {
+    return `${Math.round(rounded)} HBAR`;
+  }
+  // Format to 2 decimal places and remove trailing zeros
+  return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+};
+
 export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTableProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -259,7 +269,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
     },
     status: h.status === 'active' ? 'hold' : 'sold',
     aiInsight: h.claimableDividends > 0
-      ? `${h.claimableDividends.toFixed(4)} HBAR dividends available to claim`
+      ? `${formatHBAR(h.claimableDividends)} available to claim`
       : 'No dividends available yet',
     image: h.propertyImage,
     dividendContractAddress: h.dividendContractAddress,
@@ -367,7 +377,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               Status
             </TableHead>
             <TableHead className="flex-1 text-xs text-muted-foreground font-medium">
-              AI Insight
+              Available Dividends
             </TableHead>
             <TableHead className="w-14 text-center text-xs text-muted-foreground font-medium">
               Action
@@ -505,7 +515,9 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                     <path d="M5 1L8 4H2L5 1Z" fill="#0A0D14" />
                   </svg>
                   <span className="text-xs text-[#0A0D14] truncate">
-                    {holding.aiInsight}
+                    {claimableAmount > 0
+                      ? `${formatHBAR(claimableAmount)} available to claim`
+                      : 'No dividends available yet'}
                   </span>
                 </div>
               </TableCell>
@@ -541,7 +553,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-xs text-[#0A0D14]">
                         {claimableAmount > 0
-                          ? `${claimableAmount.toFixed(4)} HBAR dividends available to claim`
+                          ? `${formatHBAR(claimableAmount)} available to claim`
                           : 'No dividends available yet'}
                       </div>
                       <button
@@ -556,7 +568,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                         {claimingId === holding.id
                           ? "Claiming..."
                           : claimableAmount > 0
-                          ? `Claim ${claimableAmount.toFixed(4)} HBAR`
+                          ? `Claim ${formatHBAR(claimableAmount)}`
                           : "Claim rewards"}
                       </button>
                     </div>
@@ -689,10 +701,10 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                     <path d="M5 1L8 4H2L5 1Z" fill="#0A0D14" />
                   </svg>
                   <div>
-                    <div className="text-xs font-medium text-gray-700 mb-1">AI Insight</div>
+                    <div className="text-xs font-medium text-gray-700 mb-1">Available Dividends</div>
                     <div className="text-xs text-[#0A0D14]">
                       {claimableAmount > 0
-                        ? `${claimableAmount.toFixed(4)} HBAR dividends available to claim`
+                        ? `${formatHBAR(claimableAmount)} available to claim`
                         : 'No dividends available yet'}
                     </div>
                   </div>
@@ -709,7 +721,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                   {claimingId === holding.id
                     ? "Claiming..."
                     : claimableAmount > 0
-                    ? `Claim ${claimableAmount.toFixed(4)} HBAR`
+                    ? `Claim ${formatHBAR(claimableAmount)}`
                     : "Claim rewards"}
                 </button>
               </div>

@@ -1,4 +1,5 @@
 import { PortfolioMetrics } from "@/lib/services/portfolioService";
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 interface MetricsCardsProps {
   metrics: PortfolioMetrics;
@@ -6,8 +7,6 @@ interface MetricsCardsProps {
 }
 
 export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps) {
-  const imgLineChart = "/portfolio/Metrics.svg";
-
   // Demo data
   const demoMetrics = {
     totalInvested: 98450,
@@ -19,6 +18,18 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
     },
     totalHoldings: 150,
     activeProperties: 102,
+    monthlyProfit: [
+      { month: 'Apr', amount: 150 },
+      { month: 'May', amount: 220 },
+      { month: 'Jun', amount: 180 },
+      { month: 'Jul', amount: 160 },
+      { month: 'Aug', amount: 250 },
+    ],
+    investmentHistory: Array.from({ length: 30 }, (_, i) => ({
+      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      amount: 70000 + (i * 1000),
+    })),
+    monthlyChange: 12.5,
   };
 
   const displayMetrics = isDemoMode ? demoMetrics : metrics;
@@ -33,8 +44,22 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
     }).format(value);
   };
 
-  // Calculate month-over-month change (mock for now)
-  const monthlyChange = isDemoMode ? 12.5 : 0;
+  // Get monthly change (use real data if available)
+  const monthlyChange = isDemoMode ? 12.5 : (displayMetrics.monthlyChange || 0);
+
+  // Prepare investment history for line chart (last 30 days)
+  const investmentChartData = displayMetrics.investmentHistory?.slice(-30) || [];
+  const maxInvestment = Math.max(...investmentChartData.map(d => d.amount || 0), displayMetrics.totalInvested);
+  const minInvestment = Math.min(...investmentChartData.map(d => d.amount || 0), displayMetrics.totalInvested * 0.7);
+
+  // Prepare monthly profit data for bar chart
+  const profitChartData = displayMetrics.monthlyProfit || [];
+  const maxProfit = Math.max(...profitChartData.map(d => d.amount || 0), 1);
+
+  // Calculate current value progress (as percentage of a goal - could be based on total invested * 1.2)
+  const valueGoal = displayMetrics.totalInvested * 1.2; // 20% growth goal
+  const valueProgress = valueGoal > 0 ? (displayMetrics.currentValue / valueGoal) * 100 : 0;
+  const valueProgressPercentage = Math.min(100, Math.max(0, valueProgress));
 
   return (
     <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px]  h-full relative  w-full">
@@ -101,21 +126,25 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
             className="h-[71px] overflow-clip relative shrink-0 w-[112px]"
             data-node-id="2:4727"
           >
-            {/* Background dots removed - decorative element */}
-            <div
-              className="absolute h-[80px] left-[-22px] w-[175px]"
-              data-name="Line Chart"
-              data-node-id="2:7529"
-            >
-              <img
-                alt=""
-                className="block max-w-none size-full"
-                src={imgLineChart}
-              />
-            </div>
-            {/* Decorative group element removed */}
+            {investmentChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={investmentChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Line 
+                    type="monotone" 
+                    dataKey="amount" 
+                    stroke="#2d9f75" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
+                No data
+              </div>
+            )}
             <p
-              className="absolute css-c8nvji font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
+              className="absolute font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
               data-node-id="2:7538"
             >
               {isDemoMode ? '+$12,180' : `+${formatCurrency(displayMetrics.totalInvested * (monthlyChange / 100))}`}
@@ -178,7 +207,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[20px] text-nowrap whitespace-pre"
                 data-node-id="3:98670"
               >
-                {displayMetrics.totalHoldings}
+                {formatCurrency(displayMetrics.currentValue)}
               </p>
               <div
                 className="content-stretch flex gap-[4px] items-center relative shrink-0"
@@ -201,7 +230,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                     className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
                     data-node-id="3:98675"
                   >
-                    {isDemoMode ? '4.5%' : '0%'}
+                    {valueProgressPercentage.toFixed(0)}%
                   </p>
                 </div>
               </div>
@@ -214,13 +243,13 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] relative shrink-0 text-[#2d9f75] text-[12px]"
                 data-node-id="3:98677"
               >
-                {isDemoMode ? '80%' : '0%'}
+                {valueProgressPercentage.toFixed(0)}%
               </p>
               <p
                 className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] relative shrink-0 text-[#868c98] text-[11px]"
                 data-node-id="3:98678"
               >
-                {isDemoMode ? 'Progress goal' : 'Holdings'}
+                of goal
               </p>
             </div>
           </div>
@@ -240,9 +269,10 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 data-node-id="3:98680"
               >
                 <div
-                  className="w-[182px] h-[10px] bg-[#48CAA1] rounded-[31px] flex-none order-0 flex-grow-0 relative transition-all duration-500 ease-out group-hover:bg-[#3AB08A] group-hover:scale-105 group-hover:shadow-lg"
+                  className="h-[10px] bg-[#48CAA1] rounded-[31px] flex-none order-0 flex-grow-0 relative transition-all duration-500 ease-out group-hover:bg-[#3AB08A] group-hover:scale-105 group-hover:shadow-lg"
                   data-node-id="3:98681"
                   style={{
+                    width: `${valueProgressPercentage}%`,
                     boxShadow:
                       "0px 2px 4px -2px rgba(45, 159, 117, 0.4), inset 0px 3px 4px rgba(255, 255, 255, 0.3)",
                     animation: "progressFill 2s ease-out forwards",
@@ -254,7 +284,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
             </div>
             {/* Tooltip on hover */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-              80% Complete
+              {valueProgressPercentage.toFixed(0)}% Complete
             </div>
           </div>
           <div
@@ -265,7 +295,9 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               className="basis-0 css-668lj font-['Inter:Medium',_sans-serif] font-medium grow leading-[1.5] min-h-px min-w-px not-italic relative shrink-0 text-[#868c98] text-[10px]"
               data-node-id="3:98683"
             >
-              You're currently at 80% of your value goal. keep it up!
+              {valueProgressPercentage >= 100 
+                ? "You've reached your value goal! 🎉"
+                : `You're currently at ${valueProgressPercentage.toFixed(0)}% of your value goal. Keep it up!`}
             </p>
           </div>
         </div>
@@ -291,105 +323,59 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                   </svg>
                 </div>
                 <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre">
-                  {isDemoMode ? '9.2%' : '0%'}
+                  {monthlyChange.toFixed(1)}%
                 </p>
               </div>
               <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre">
-                {isDemoMode ? 'growth' : 'dividends'}
+                dividends
               </p>
             </div>
           </div>
           <div className="content-stretch flex gap-[2px] items-end relative shrink-0 w-[145px] pr-6">
-            <div className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
-              <div
-                className="bg-[rgba(56,198,153,0.2)] h-[37px] rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:bg-[rgba(56,198,153,0.4)] hover:scale-105 group-hover:shadow-lg relative overflow-hidden"
-                style={{
-                  animation: "barGrow 1.5s ease-out forwards",
-                  animationDelay: "0.2s",
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
-              <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
-                <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
-                  <p className="leading-[1.4] whitespace-pre">Apr</p>
+            {profitChartData.length > 0 ? (
+              profitChartData.map((item, index) => {
+                const height = maxProfit > 0 ? (item.amount / maxProfit) * 50 : 0;
+                const isLatest = index === profitChartData.length - 1;
+                return (
+                  <div key={item.month} className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
+                    <div
+                      className={`rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:scale-105 group-hover:shadow-lg relative overflow-hidden ${
+                        isLatest ? 'bg-[#38c699]' : 'bg-[rgba(56,198,153,0.2)]'
+                      }`}
+                      style={{
+                        height: `${Math.max(20, height)}px`,
+                        animation: `barGrow 1.5s ease-out forwards`,
+                        animationDelay: `${(index + 1) * 0.2}s`,
+                      }}
+                    >
+                      {isLatest && (
+                        <>
+                          <div aria-hidden="true" className="absolute border-[0.5px] border-solid border-white inset-0 rounded-[2px]" />
+                          <div className="absolute inset-0 shadow-[0px_-8px_18px_0px_inset_rgba(255,255,255,0.3)]" />
+                        </>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                    </div>
+                    <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
+                      <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
+                        <p className="leading-[1.4] whitespace-pre">{item.month}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              // Fallback to demo bars if no data
+              ['Apr', 'May', 'Jun', 'Jul', 'Aug'].map((month, index) => (
+                <div key={month} className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0">
+                  <div className="bg-[rgba(56,198,153,0.2)] h-[37px] rounded-[2px] shrink-0 w-full" />
+                  <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
+                    <p className="text-[10px] text-[rgba(134,140,152,0.7)]">{month}</p>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
-              <div
-                className="bg-[rgba(56,198,153,0.2)] h-[51px] rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:bg-[rgba(56,198,153,0.4)] hover:scale-105 group-hover:shadow-lg relative overflow-hidden"
-                style={{
-                  animation: "barGrow 1.5s ease-out forwards",
-                  animationDelay: "0.4s",
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
-              <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
-                <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
-                  <p className="leading-[1.4] whitespace-pre">May</p>
-                </div>
-              </div>
-            </div>
-            <div className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
-              <div
-                className="bg-[rgba(56,198,153,0.2)] h-[44px] rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:bg-[rgba(56,198,153,0.4)] hover:scale-105 group-hover:shadow-lg relative overflow-hidden"
-                style={{
-                  animation: "barGrow 1.5s ease-out forwards",
-                  animationDelay: "0.6s",
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
-              <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
-                <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
-                  <p className="leading-[1.4] whitespace-pre">Jun</p>
-                </div>
-              </div>
-            </div>
-            <div className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
-              <div
-                className="bg-[rgba(56,198,153,0.2)] h-[39px] rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:bg-[rgba(56,198,153,0.4)] hover:scale-105 group-hover:shadow-lg relative overflow-hidden"
-                style={{
-                  animation: "barGrow 1.5s ease-out forwards",
-                  animationDelay: "0.8s",
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
-              <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
-                <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
-                  <p className="leading-[1.4] whitespace-pre">Jul</p>
-                </div>
-              </div>
-            </div>
-            <div className="basis-0 content-stretch flex flex-col gap-[2px] grow items-center justify-center min-h-px min-w-px relative shrink-0 group cursor-pointer">
-              <div
-                className="bg-[#38c699] h-[50px] relative rounded-[2px] shrink-0 w-full transition-all duration-500 ease-out hover:bg-[#2db085] hover:scale-105 group-hover:shadow-lg overflow-hidden"
-                style={{
-                  animation: "barGrow 1.5s ease-out forwards",
-                  animationDelay: "1.0s",
-                }}
-              >
-                <div
-                  aria-hidden="true"
-                  className="absolute border-[0.5px] border-solid border-white inset-0 rounded-[2px]"
-                />
-                <div className="absolute inset-0 shadow-[0px_-8px_18px_0px_inset_rgba(255,255,255,0.3)]" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
-              </div>
-              <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
-                <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
-                  <p className="leading-[1.4] whitespace-pre">Aug</p>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -464,7 +450,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                   className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[18.166px] w-[32.698px]"
                   data-node-id="3:98693"
                 >
-                  {displayMetrics.activeProperties}
+                  {displayMetrics.totalReturn.percentage.toFixed(1)}
                 </p>
                 <div
                   className="content-stretch flex gap-[2.725px] h-[18.166px] items-center relative shrink-0"
@@ -488,7 +474,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                     className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[10.899px] text-nowrap whitespace-pre"
                     data-node-id="3:98697"
                   >
-                    {isDemoMode ? '80' : displayMetrics.totalReturn.percentage.toFixed(1)}
+                    {displayMetrics.totalReturn.percentage.toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -496,7 +482,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[10.899px] text-nowrap whitespace-pre"
                 data-node-id="3:98698"
               >
-                Adequate Stock
+                Return %
               </p>
             </div>
             <div
@@ -532,14 +518,14 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                   className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[18.166px] text-nowrap whitespace-pre"
                   data-node-id="3:98701"
                 >
-                  {displayMetrics.totalHoldings - displayMetrics.activeProperties}
+                  {formatCurrency(displayMetrics.totalReturn.amount)}
                 </p>
                 <div
                   className="content-stretch flex gap-[2.725px] h-[18.166px] items-center w-full relative shrink-0"
                   data-node-id="3:98702"
                 >
                   <div className="flex items-center justify-center relative shrink-0">
-                    <div className="flex-none scale-y-[-100%]">
+                    <div className="flex-none">
                       <div
                         className="relative size-[7.266px]"
                         data-node-id="3:98703"
@@ -550,16 +536,18 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                           viewBox="0 0 8 8"
                           fill="none"
                         >
-                          <path d="M4 7L1.5 4H6.5L4 7Z" fill="#d84e68" />
+                          <path d="M4 1L6.5 4H1.5L4 1Z" fill={displayMetrics.totalReturn.amount >= 0 ? "#2d9f75" : "#d84e68"} />
                         </svg>
                       </div>
                     </div>
                   </div>
                   <p
-                    className="css-2qvfzs font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#d84e68] text-[10.899px] text-nowrap whitespace-pre"
+                    className={`font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[10.899px] text-nowrap whitespace-pre ${
+                      displayMetrics.totalReturn.amount >= 0 ? 'text-[#2d9f75]' : 'text-[#d84e68]'
+                    }`}
                     data-node-id="3:98705"
                   >
-                    {isDemoMode ? '10' : '0'}
+                    {displayMetrics.totalReturn.amount >= 0 ? '+' : ''}{formatCurrency(displayMetrics.totalReturn.amount)}
                   </p>
                 </div>
               </div>
@@ -567,7 +555,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[10.899px] text-nowrap whitespace-pre"
                 data-node-id="3:98706"
               >
-                Low Stock
+                Return Amount
               </p>
             </div>
             <div

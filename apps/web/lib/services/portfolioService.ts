@@ -58,6 +58,10 @@ export interface PortfolioMetrics {
   };
   totalHoldings: number;
   activeProperties: number;
+  // Historical data for charts
+  monthlyProfit: Array<{ month: string; amount: number }>;
+  investmentHistory: Array<{ date: string; amount: number }>;
+  monthlyChange: number;
 }
 
 /**
@@ -308,9 +312,12 @@ export async function fetchUserPortfolio(
 }
 
 /**
- * Calculate portfolio metrics from holdings
+ * Calculate portfolio metrics from holdings with historical data
  */
-export function calculatePortfolioMetrics(holdings: PropertyHolding[]): PortfolioMetrics {
+export async function calculatePortfolioMetrics(
+  holdings: PropertyHolding[],
+  authToken?: string
+): Promise<PortfolioMetrics> {
   const totalInvested = holdings.reduce((sum, h) => sum + h.investedAmount, 0);
   const currentValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
   const totalProfit = holdings.reduce((sum, h) => sum + h.claimableDividends, 0);
@@ -319,6 +326,107 @@ export function calculatePortfolioMetrics(holdings: PropertyHolding[]): Portfoli
   const totalReturnPercentage = totalInvested > 0 
     ? (totalReturnAmount / totalInvested) * 100 
     : 0;
+
+  // Fetch historical distribution data for charts
+  const monthlyProfit: Array<{ month: string; amount: number }> = [];
+  const investmentHistory: Array<{ date: string; amount: number }> = [];
+  let monthlyChange = 0;
+
+  try {
+    const token = authToken || (typeof window !== 'undefined' ? localStorage.getItem('hedera-auth-token') : null);
+    
+    if (token && holdings.length > 0) {
+      // Fetch distributions for each property
+      const monthlyMap = new Map<string, number>();
+      const propertyDistributions: Array<{ date: Date; amount: number }> = [];
+
+      for (const holding of holdings) {
+        try {
+          const response = await fetch(`/api/distributions/property/${holding.propertyId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const distributions = data.distributions || [];
+
+            for (const dist of distributions) {
+              if (dist.executedAt || dist.createdAt) {
+                const date = new Date(dist.executedAt || dist.createdAt);
+                const month = date.toLocaleDateString('en-US', { month: 'short' });
+                const userShare = holding.sharesOwned / holding.totalShares;
+                const userAmount = (dist.totalAmount || 0) * userShare;
+
+                monthlyMap.set(month, (monthlyMap.get(month) || 0) + userAmount);
+                propertyDistributions.push({ date, amount: userAmount });
+              }
+            }
+          }
+        } catch (err) {
+          console.warn(`Error fetching distributions for ${holding.propertyId}:`, err);
+        }
+      }
+
+      // Convert monthly map to array for last 5 months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const now = new Date();
+      const last5Months: Array<{ month: string; amount: number }> = [];
+
+      for (let i = 4; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const month = months[date.getMonth()];
+        last5Months.push({
+          month,
+          amount: monthlyMap.get(month) || 0
+        });
+      }
+
+      monthlyProfit.push(...last5Months);
+
+      // Calculate monthly change
+      if (last5Months.length >= 2) {
+        const thisMonth = last5Months[last5Months.length - 1]?.amount || 0;
+        const lastMonth = last5Months[last5Months.length - 2]?.amount || 0;
+        monthlyChange = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+      }
+
+      // Generate investment history (simplified - can be enhanced with actual purchase dates)
+      // For now, we'll simulate gradual investment growth over the last 30 days
+      const nowDate = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(nowDate);
+        date.setDate(date.getDate() - i);
+        investmentHistory.push({
+          date: date.toISOString().split('T')[0],
+          // Simulate gradual investment - start at 70% of total, grow to 100%
+          amount: totalInvested * (0.7 + (30 - i) / 30 * 0.3)
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching historical distributions:', error);
+    // Fallback: generate empty arrays
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthlyProfit.push({
+        month: months[date.getMonth()],
+        amount: 0
+      });
+    }
+    const nowDate = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(nowDate);
+      date.setDate(date.getDate() - i);
+      investmentHistory.push({
+        date: date.toISOString().split('T')[0],
+        amount: totalInvested
+      });
+    }
+  }
   
   return {
     totalInvested,
@@ -330,6 +438,9 @@ export function calculatePortfolioMetrics(holdings: PropertyHolding[]): Portfoli
     },
     totalHoldings: holdings.length,
     activeProperties: holdings.filter(h => h.status === 'active').length,
+    monthlyProfit,
+    investmentHistory,
+    monthlyChange,
   };
 }
 
