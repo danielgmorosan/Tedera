@@ -12,7 +12,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  outputFileTracingRoot: '/Users/souheila/testhedera/hedera-hackathon/apps/web',
+  // outputFileTracingRoot can break Vercel tracing if set to a local absolute path.
+  // Commented out to allow Vercel to correctly trace server functions.
+  // outputFileTracingRoot: '/Users/souheila/testhedera/hedera-hackathon/apps/web',
   webpack: (config, { isServer, webpack }) => {
     // Handle Node.js built-in modules
     config.resolve.fallback = {

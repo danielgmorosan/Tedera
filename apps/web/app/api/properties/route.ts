@@ -5,11 +5,9 @@ import { dbConnect } from "@/app/../lib/db";
 import { Property } from "@/app/../models/Property";
 import { bearerToPayload } from "@/app/../lib/api/auth";
 import { parsePagination, buildSkipLimit } from "@/app/../lib/api/pagination";
-import {
-  deployPropertyToken,
-  deployPropertySale,
-  deployDividendDistributor,
-} from "@/lib/hedera/tokenDeployment";
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const createSchema = z.object({
   name: z.string().min(3),
