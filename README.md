@@ -3,7 +3,9 @@
 
 # Tedera - Decentralized RWA Marketplace
 
-A decentralized marketplace for tokenizing real estate properties. Basically, you can buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools.
+A decentralized marketplace for tokenizing real estate properties. Basically, you can buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools. visit our website [Here](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing)
+
+
 
 
 ## What it does
@@ -21,6 +23,7 @@ Think of it like this: instead of buying a whole building, you can buy tokens th
 
 We're using ERC-1400 compliant tokens, so it should work with standard tools and be regulatory-friendly.
 
+
 ## Tech stack
 
 **Frontend:**
@@ -35,11 +38,11 @@ We're using ERC-1400 compliant tokens, so it should work with standard tools and
 - JWT for auth
 - Zod for validation
 
-**Blockchain stuff:**
-- Hedera Hashgraph (chose this over Ethereum because gas fees suck)
-- Asset Tokenization Studio SDK (makes token creation way easier)
+**Blockchain:**
+- Hedera Hashgraph 
+- Asset Tokenization Studio SDK 
 - Hardhat for contract development
-- Solidity ^0.8.20 with OpenZeppelin contracts (don't reinvent the wheel)
+- Solidity ^0.8.20 with OpenZeppelin contracts 
 
 **Smart Contracts:**
 - `EquityToken.sol` - The actual token, ERC-20 compatible with extra security token features
@@ -66,9 +69,9 @@ Pretty standard monorepo setup. The contracts live in a separate package so we c
 ### What you need
 
 - Node.js 18+ (we use npm, but pnpm works too)
-- MongoDB - local works, but Atlas free tier is easier
-- MetaMask installed (we'll add Hedera testnet automatically)
-- A Hedera testnet account with some HBAR (get it from the portal or HashPack faucet)
+- MongoDB 
+- MetaMask installed 
+- A Hedera testnet account with some HBAR 
 
 ### Setup
 
@@ -112,7 +115,7 @@ This compiles the Solidity contracts. The ABIs get copied to the web app automat
 npm run dev
 ```
 
-Open http://localhost:3000 and you should see the marketplace. If something breaks, check the console - it's usually a missing env var or MongoDB connection issue.
+Open http://localhost:3000 and you should see the marketplace.
 
 ### Connecting MetaMask
 
