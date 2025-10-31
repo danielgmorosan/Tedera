@@ -417,10 +417,33 @@ export function Marketplace() {
     }
   };
 
-  const handleViewDetail = (property: (typeof mockProperties)[0]) => {
-    // Cast to the stricter type expected by PropertyDetail
+  const handleViewDetail = (property: any) => {
+    const apy = `${property.expectedYield || 8.5}% APY`;
+    const totalValue = property.totalShares * property.pricePerShare;
+    const value = `$${(totalValue / 1_000_000).toFixed(1)}M`;
+    const category =
+      property.type === "real-estate"
+        ? "Real Estate"
+        : property.type === "forest"
+        ? "Forest"
+        : property.type === "solar"
+        ? "Energy"
+        : "Other";
+    const availableShares = property.availableShares || property.totalShares || 1000;
+    const totalShares = property.totalShares || 1000;
+    const availablePercentage = (availableShares / totalShares) * 100;
+    
     setSelectedProperty({
       ...property,
+      id: property._id || property.id,
+      title: property.name,
+      availableSupply: availablePercentage,
+      totalValue: totalValue,
+      saleContractAddress: property.saleContractAddress,
+      totalShares: property.totalShares,
+      pricePerShare: property.pricePerShare,
+      status: property.status,
+      images: property.images || [], // Pass images array
       type: property.type as "forest" | "solar" | "real-estate",
     });
   };
@@ -878,6 +901,7 @@ export function Marketplace() {
                   totalShares: property.totalShares,
                   pricePerShare: property.pricePerShare,
                   status: property.status,
+                  images: property.images || [], // Pass images array
                 })}
                 className="focus:outline-none"
                 role="button"
@@ -895,6 +919,7 @@ export function Marketplace() {
                       totalShares: property.totalShares,
                       pricePerShare: property.pricePerShare,
                       status: property.status,
+                      images: property.images || [], // Pass images array
                     });
                   }
                 }}

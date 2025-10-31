@@ -25,9 +25,18 @@ import {
   Heart,
   X,
   ImageIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useWallet } from "@/context/wallet-context";
 import { ethers } from "ethers";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface Property {
   id: string;
@@ -271,31 +280,54 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl overflow-hidden">
               <CardContent className="p-0">
                 <div className="relative">
-                  <div className="grid grid-cols-4 gap-2 h-64 md:h-80">
-                    {/* Main image - only show if image exists */}
+                  <div className="relative h-64 md:h-80 lg:h-96 rounded-t-2xl overflow-hidden">
+                    {/* Image Carousel */}
                     {propertyImages.length > 0 ? (
-                      <div
-                        className="col-span-4 relative group cursor-pointer"
-                        onClick={() => allImages.length > 0 && setShowPhotoModal(true)}
-                      >
-                        <img
-                          src={propertyImages[0]}
-                          alt={property.title}
-                          className="w-full h-full object-cover rounded-2xl hover:brightness-95 transition-all duration-200"
-                        />
-                      </div>
+                      <Carousel className="w-full h-full">
+                        <CarouselContent className="h-full">
+                          {propertyImages.map((imageUrl, index) => (
+                            <CarouselItem key={index} className="h-full">
+                              <div className="relative h-full">
+                                <img
+                                  src={imageUrl}
+                                  alt={`${property.title} - Image ${index + 1}`}
+                                  className="w-full h-full object-cover cursor-pointer"
+                                  onClick={() => setShowPhotoModal(true)}
+                                />
+                              </div>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        {propertyImages.length > 1 && (
+                          <>
+                            <CarouselPrevious className="left-4 bg-white/90 hover:bg-white text-slate-800 border-slate-200 shadow-lg">
+                              <ChevronLeft className="h-5 w-5" />
+                            </CarouselPrevious>
+                            <CarouselNext className="right-4 bg-white/90 hover:bg-white text-slate-800 border-slate-200 shadow-lg">
+                              <ChevronRight className="h-5 w-5" />
+                            </CarouselNext>
+                          </>
+                        )}
+                      </Carousel>
                     ) : (
-                      <div className="col-span-4 flex items-center justify-center bg-slate-100 rounded-2xl">
+                      <div className="flex items-center justify-center h-full bg-slate-100">
                         <div className="text-center text-slate-400">
                           <ImageIcon className="h-12 w-12 mx-auto mb-2" />
                           <p>No images available</p>
                         </div>
                       </div>
                     )}
+
+                    {/* Image counter badge (if multiple images) */}
+                    {propertyImages.length > 1 && (
+                      <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-10">
+                        {propertyImages.length} photos
+                      </div>
+                    )}
                   </div>
 
                   {/* Property type and sustainability badges */}
-                  <div className="absolute top-4 left-4 flex gap-2">
+                  <div className="absolute top-4 left-4 flex gap-2 z-10">
                     <Badge
                       variant="secondary"
                       className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-lg text-slate-800 font-semibold px-3 py-1.5 rounded-full hover:bg-white/95 transition-all duration-200"
@@ -333,8 +365,8 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                   )}
                 </div>
 
-                {/* Property Information Section */}
-                <div className="p-6 sm:p-8 mt-8 pt-8">
+                {/* Property Information Section - Increased spacing */}
+                <div className="p-6 sm:p-8 mt-12 pt-8">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
@@ -647,10 +679,10 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
 
       {showPhotoModal && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-6xl max-h-full overflow-auto">
+          <div className="relative w-full max-w-6xl max-h-full">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-white text-xl font-semibold">
-                {property.title} - Photos
+                {property.title} - Photos ({allImages.length})
               </h2>
               <Button
                 variant="ghost"
@@ -661,26 +693,41 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                 <X className="h-6 w-6" />
               </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allImages.length > 0 ? (
-                allImages.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image.src}
-                      alt={image.alt}
-                      className="w-full h-64 object-cover rounded-lg hover:scale-105 transition-transform duration-200"
-                    />
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-3 flex items-center justify-center h-64 text-slate-400">
-                  <div className="text-center">
-                    <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                    <p>No images available</p>
-                  </div>
+            {/* Carousel in Modal */}
+            {allImages.length > 0 ? (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {allImages.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <div className="relative">
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-auto max-h-[80vh] object-contain rounded-lg mx-auto"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {allImages.length > 1 && (
+                  <>
+                    <CarouselPrevious className="left-4 bg-white/90 hover:bg-white text-slate-800 border-slate-200 shadow-lg">
+                      <ChevronLeft className="h-5 w-5" />
+                    </CarouselPrevious>
+                    <CarouselNext className="right-4 bg-white/90 hover:bg-white text-slate-800 border-slate-200 shadow-lg">
+                      <ChevronRight className="h-5 w-5" />
+                    </CarouselNext>
+                  </>
+                )}
+              </Carousel>
+            ) : (
+              <div className="flex items-center justify-center h-64 text-white">
+                <div className="text-center">
+                  <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                  <p>No images available</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

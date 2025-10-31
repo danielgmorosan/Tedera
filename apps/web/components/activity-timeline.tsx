@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -95,6 +96,42 @@ const eventColors = {
 }
 
 export function ActivityTimeline({ propertyId }: ActivityTimelineProps) {
+  const [events, setEvents] = useState<TimelineEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true)
+        const token = typeof window !== 'undefined' ? localStorage.getItem('hedera-auth-token') : null
+        
+        const response = await fetch(`/api/properties/${propertyId}/activity`, {
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {},
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setEvents(data.events || [])
+        } else {
+          console.error('Failed to fetch activity timeline')
+          // Fallback to empty array if fetch fails
+          setEvents([])
+        }
+      } catch (error) {
+        console.error('Error fetching activity timeline:', error)
+        setEvents([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (propertyId) {
+      fetchEvents()
+    }
+  }, [propertyId])
+
   const formatDate = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
       year: "numeric",
@@ -106,7 +143,68 @@ export function ActivityTimeline({ propertyId }: ActivityTimelineProps) {
   }
 
   const formatTransactionId = (txId: string) => {
+    if (!txId) return ""
+    // Handle both Hedera (0.0.x-y) and EVM (0x...) formats
+    if (txId.startsWith("0x")) {
+      return `${txId.slice(0, 8)}...${txId.slice(-6)}`
+    }
     return `${txId.slice(0, 8)}...${txId.slice(-6)}`
+  }
+
+  const formatAddress = (address: string) => {
+    if (!address) return ""
+    if (address.startsWith("0x")) {
+      return `${address.slice(0, 6)}...${address.slice(-4)}`
+    }
+    return address.length > 10 ? `${address.slice(0, 6)}...${address.slice(-4)}` : address
+  }
+
+  const getHederaExplorerUrl = (transactionId: string) => {
+    if (!transactionId) return "#"
+    // Hedera testnet explorer URL format
+    if (transactionId.startsWith("0x")) {
+      // EVM transaction
+      return `https://hashscan.io/testnet/transaction/${transactionId}`
+    } else {
+      // Hedera native transaction (format: 0.0.x-y)
+      return `https://hashscan.io/testnet/transaction/${transactionId}`
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="h-5 w-5 mr-2" />
+            Activity Timeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            Loading activity timeline...
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (events.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calendar className="h-5 w-5 mr-2" />
+            Activity Timeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            No activity yet. Check back later!
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -119,7 +217,7 @@ export function ActivityTimeline({ propertyId }: ActivityTimelineProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockEvents.map((event, index) => {
+          {events.map((event, index) => {
             const Icon = eventIcons[event.type]
             const iconColor = eventColors[event.type]
 
@@ -129,7 +227,7 @@ export function ActivityTimeline({ propertyId }: ActivityTimelineProps) {
                   <div className={`p-2 rounded-full bg-muted ${iconColor}`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  {index < mockEvents.length - 1 && <div className="w-px h-12 bg-border mt-2" />}
+                  {index < events.length - 1 && <div className="w-px h-12 bg-border mt-2" />}
                 </div>
                 <div className="flex-1 pb-4">
                   <div className="flex items-start justify-between mb-2">
@@ -147,12 +245,17 @@ export function ActivityTimeline({ propertyId }: ActivityTimelineProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {event.user && <span>User: {event.user}</span>}
+                    {event.user && <span>User: {formatAddress(event.user)}</span>}
                     {event.transactionId && (
-                      <Button variant="ghost" size="sm" className="h-auto p-0 text-xs">
+                      <a
+                        href={getHederaExplorerUrl(event.transactionId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center hover:text-foreground transition-colors"
+                      >
                         <ExternalLink className="h-3 w-3 mr-1" />
                         {formatTransactionId(event.transactionId)}
-                      </Button>
+                      </a>
                     )}
                   </div>
                 </div>
