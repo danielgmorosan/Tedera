@@ -877,6 +877,7 @@ export function Marketplace() {
                   saleContractAddress: property.saleContractAddress,
                   totalShares: property.totalShares,
                   pricePerShare: property.pricePerShare,
+                  status: property.status,
                 })}
                 className="focus:outline-none"
                 role="button"
@@ -893,6 +894,7 @@ export function Marketplace() {
                       saleContractAddress: property.saleContractAddress,
                       totalShares: property.totalShares,
                       pricePerShare: property.pricePerShare,
+                      status: property.status,
                     });
                   }
                 }}

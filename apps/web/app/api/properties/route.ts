@@ -33,6 +33,7 @@ const createSchema = z.object({
   dividendContractAddress: z.string().optional(),
   type: z.enum(["forest", "solar", "real-estate"]).optional(),
   image: z.string().optional(),
+  images: z.array(z.string()).optional(), // Array of image URLs
   expectedYield: z.number().optional(),
   sustainabilityScore: z.number().optional(),
   tags: z.array(z.string()).optional(),
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
       // Additional marketplace fields
       type: data.type || "real-estate",
       image: data.image,
+      images: data.images || [],
       expectedYield: data.expectedYield || 8.5,
       sustainabilityScore: data.sustainabilityScore || 85,
       tags: data.tags || [],

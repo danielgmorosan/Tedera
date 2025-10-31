@@ -160,32 +160,40 @@ export function CreatePropertyForm() {
     try {
       console.log('🚀 Creating property (contracts will be deployed on backend)...');
 
-      // Upload images first if any
-      let uploadedImageUrl = formData.imageUrl;
+      // Upload all images first if any
+      const uploadedImageUrls: string[] = [];
       if (formData.images.length > 0) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', formData.images[0]); // Use first image as main image
-        
         const token = localStorage.getItem('hedera-auth-token');
         if (!token) {
           throw new Error('Authentication required. Please ensure your wallet is connected and you are authenticated.');
         }
         
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formDataUpload,
-        });
+        // Upload all images
+        for (const imageFile of formData.images) {
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', imageFile);
+          
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formDataUpload,
+          });
 
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json();
-          uploadedImageUrl = uploadResult.imageUrl;
-        } else {
-          console.warn('Image upload failed, using provided URL or placeholder');
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            uploadedImageUrls.push(uploadResult.imageUrl);
+          } else {
+            console.warn('Image upload failed for:', imageFile.name);
+          }
         }
       }
+
+      // Use first uploaded image as main image (for backward compatibility)
+      const mainImageUrl = uploadedImageUrls.length > 0 
+        ? uploadedImageUrls[0] 
+        : (formData.imageUrl || "/placeholder.svg");
 
       // Deploy contracts from frontend using MetaMask
       console.log('🚀 Starting contract deployments from frontend...');
@@ -373,7 +381,8 @@ export function CreatePropertyForm() {
           saleContractAddress: saleAddress, // Real sale contract address
           dividendContractAddress: dividendAddress, // Real dividend contract address
           type: formData.type,
-          image: uploadedImageUrl || "/placeholder.svg",
+          image: mainImageUrl,
+          images: uploadedImageUrls, // Send all uploaded images
           expectedYield: parseFloat(formData.expectedYield) || 8.5,
           sustainabilityScore: parseInt(formData.sustainabilityScore) || 85,
           tags: formData.tags,

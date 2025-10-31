@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import {
   X,
   ImageIcon,
 } from "lucide-react";
+import { useWallet } from "@/context/wallet-context";
+import { ethers } from "ethers";
 
 interface Property {
   id: string;
@@ -33,6 +35,7 @@ interface Property {
   location: string;
   type: "forest" | "solar" | "real-estate";
   image: string;
+  images?: string[]; // Array of image URLs for gallery
   availableSupply: number;
   expectedYield: number;
   totalValue: number;
@@ -45,6 +48,8 @@ interface Property {
   pricePerShare?: number;
   lastDistribution?: string;
   nextDistribution?: string;
+  saleContractAddress?: string;
+  status?: "open" | "closed";
 }
 
 interface PropertyDetailProps {
@@ -66,14 +71,73 @@ const typeColors = {
 
 export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
   const [isFavorited, setIsFavorited] = useState(false);
-  const [showPhotoModal, setShowPhotoModal] = useState(false); // Added state for photo modal
-  const [shareSuccess, setShareSuccess] = useState(false); // Added state for share success
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
   const [downloadingProspectus, setDownloadingProspectus] = useState(false);
   const [schedulingVisit, setSchedulingVisit] = useState(false);
   const [viewingReports, setViewingReports] = useState(false);
+  const [realOwnership, setRealOwnership] = useState<{
+    sharesSold: number;
+    availableShares: number;
+    ownedPercentage: number;
+  } | null>(null);
+  
   const Icon = typeIcons[property.type];
   const iconColor = typeColors[property.type];
-  const ownedPercentage = 100 - property.availableSupply;
+  const { provider } = useWallet();
+
+  // Fetch real ownership data from blockchain
+  useEffect(() => {
+    const fetchOwnershipData = async () => {
+      if (!property.saleContractAddress || !provider) {
+        return;
+      }
+
+      try {
+        const PropertySaleABI = [
+          "function totalShares() external view returns (uint256)",
+          "function sharesSold() external view returns (uint256)",
+        ];
+
+        const saleContract = new ethers.Contract(
+          property.saleContractAddress,
+          PropertySaleABI,
+          provider
+        );
+
+        const totalSharesWei = await saleContract.totalShares();
+        const sharesSoldWei = await saleContract.sharesSold();
+        
+        const totalShares = parseFloat(ethers.utils.formatUnits(totalSharesWei, 18));
+        const sharesSold = parseFloat(ethers.utils.formatUnits(sharesSoldWei, 18));
+        const availableShares = totalShares - sharesSold;
+        const ownedPercentage = totalShares > 0 ? (sharesSold / totalShares) * 100 : 0;
+
+        setRealOwnership({
+          sharesSold,
+          availableShares,
+          ownedPercentage,
+        });
+      } catch (error) {
+        console.error('Error fetching ownership data:', error);
+      }
+    };
+
+    fetchOwnershipData();
+  }, [property.saleContractAddress, provider]);
+
+  // Use real data if available, otherwise fallback to property.availableSupply
+  const ownedPercentage = realOwnership 
+    ? realOwnership.ownedPercentage 
+    : (100 - property.availableSupply);
+  
+  const availableShares = realOwnership
+    ? realOwnership.availableShares
+    : (property.totalShares ? (property.availableSupply / 100) * property.totalShares : 0);
+  
+  const sharesOwned = realOwnership
+    ? realOwnership.sharesSold
+    : (property.totalShares ? ((ownedPercentage / 100) * property.totalShares) : 0);
 
   const handleShare = async () => {
     const shareData = {
@@ -146,15 +210,15 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     }, 1000);
   };
 
-  // Only show uploaded images, no hardcoded defaults
-  const allImages = property.image
-    ? [
-        {
-          src: property.image,
-          alt: `${property.title} - Main view`,
-        },
-      ]
-    : [];
+  // Use all uploaded images, no hardcoded defaults
+  const propertyImages = property.images && property.images.length > 0
+    ? property.images
+    : (property.image ? [property.image] : []); // Fallback to single image for backward compatibility
+
+  const allImages = propertyImages.map((imageUrl, index) => ({
+    src: imageUrl,
+    alt: `${property.title} - Image ${index + 1}`,
+  }));
 
   const mockStats = {
     area: property.area || "1,000 hectares",
@@ -209,13 +273,13 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                 <div className="relative">
                   <div className="grid grid-cols-4 gap-2 h-64 md:h-80">
                     {/* Main image - only show if image exists */}
-                    {property.image ? (
+                    {propertyImages.length > 0 ? (
                       <div
                         className="col-span-4 relative group cursor-pointer"
                         onClick={() => allImages.length > 0 && setShowPhotoModal(true)}
                       >
                         <img
-                          src={property.image}
+                          src={propertyImages[0]}
                           alt={property.title}
                           className="w-full h-full object-cover rounded-2xl hover:brightness-95 transition-all duration-200"
                         />
@@ -249,10 +313,28 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                       Sustainability: {property.sustainabilityScore}/100
                     </Badge>
                   </div>
+
+                  {/* Sale Status Badge */}
+                  {(property.availableSupply > 0 && (property.status === "open" || !property.status)) && (
+                    <Badge
+                      variant="default"
+                      className="absolute top-4 right-4 bg-emerald-500/95 text-white backdrop-blur-lg border border-emerald-600/20 shadow-lg font-semibold px-3 py-1.5 rounded-full hover:bg-emerald-500 transition-all duration-200"
+                    >
+                      Sale Active
+                    </Badge>
+                  )}
+                  {(property.availableSupply === 0 || property.status === "closed") && (
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-4 right-4 bg-slate-800/95 text-white backdrop-blur-lg border border-slate-700/20 shadow-lg font-semibold px-3 py-1.5 rounded-full hover:bg-slate-800 transition-all duration-200"
+                    >
+                      Sold Out
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Property Information Section */}
-                <div className="p-6 sm:p-8 mt-20">
+                <div className="p-6 sm:p-8 mt-8 pt-8">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h1 className="text-3xl font-bold text-slate-900 mb-4 leading-tight">
@@ -353,7 +435,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                       Owned by Investors
                     </span>
                     <span className="font-bold text-slate-900">
-                      {ownedPercentage}%
+                      {ownedPercentage.toFixed(2)}%
                     </span>
                   </div>
                   <Progress value={ownedPercentage} className="h-3" />
@@ -362,15 +444,13 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                       Available for Purchase
                     </span>
                     <span className="font-bold text-emerald-600">
-                      {property.availableSupply}%
+                      {(100 - ownedPercentage).toFixed(2)}%
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-4">
                     <div className="text-center p-4 bg-emerald-50/80 hover:bg-emerald-100/80 rounded-xl border border-emerald-100 hover:border-emerald-200 transition-all duration-200 hover:shadow-sm">
                       <div className="text-lg font-bold text-emerald-700">
-                        {Math.floor(
-                          (ownedPercentage / 100) * mockStats.totalShares
-                        ).toLocaleString()}
+                        {Math.floor(sharesOwned).toLocaleString()}
                       </div>
                       <div className="text-sm text-slate-600 font-medium">
                         Shares Owned
@@ -378,10 +458,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                     </div>
                     <div className="text-center p-4 bg-blue-50/80 hover:bg-blue-100/80 rounded-xl border border-blue-100 hover:border-blue-200 transition-all duration-200 hover:shadow-sm">
                       <div className="text-lg font-bold text-blue-700">
-                        {Math.floor(
-                          (property.availableSupply / 100) *
-                            mockStats.totalShares
-                        ).toLocaleString()}
+                        {Math.floor(availableShares).toLocaleString()}
                       </div>
                       <div className="text-sm text-slate-600 font-medium">
                         Shares Available

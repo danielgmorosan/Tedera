@@ -11,6 +11,7 @@ export interface IProperty {
   // Additional marketplace fields
   type?: "forest" | "solar" | "real-estate";
   image?: string;
+  images?: string[]; // Array of image URLs for gallery
   expectedYield?: number;
   sustainabilityScore?: number;
   tags?: string[];
@@ -42,6 +43,7 @@ const PropertySchema = new Schema<IProperty>(
     // Additional marketplace fields
     type: { type: String, enum: ["forest", "solar", "real-estate"], default: "real-estate" },
     image: { type: String },
+    images: [{ type: String }], // Array of image URLs for gallery
     expectedYield: { type: Number, default: 8.5 },
     sustainabilityScore: { type: Number, default: 85 },
     tags: [{ type: String }],
