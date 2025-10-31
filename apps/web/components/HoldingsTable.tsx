@@ -12,6 +12,8 @@ import { PropertyHolding } from "@/lib/services/portfolioService";
 import React, { useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useDividendDistribution } from "@/hooks/use-dividend-distribution";
+import { useWallet } from "@/context/wallet-context";
+import { ethers } from "ethers";
 
 interface HoldingData {
   id: string;
@@ -108,12 +110,79 @@ const mockHoldings: HoldingData[] = [
 export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTableProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [liveClaimable, setLiveClaimable] = useState<Record<string, number>>({});
   const { toast } = useToast();
   const { getDistributionCount, claimDividend } = useDividendDistribution();
+  const { provider, account } = useWallet();
 
   const toggleExpanded = useCallback((id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
+
+  // Fetch live claimable amount directly from contract
+  const fetchLiveClaimable = useCallback(async (holding: HoldingData) => {
+    try {
+      if (!provider || !account || !holding.dividendContractAddress) {
+        return;
+      }
+
+      const abi = [
+        "function getDistributionCount() view returns (uint256)",
+        "function hasClaimed(uint256 distributionId, address holder) view returns (bool)",
+        "function getClaimableDividend(uint256 distributionId, address holder) view returns (uint256)",
+      ];
+
+      const contract = new ethers.Contract(
+        holding.dividendContractAddress,
+        abi,
+        provider
+      );
+
+      const countBN = await contract.getDistributionCount();
+      const count = parseInt(countBN.toString(), 10);
+
+      if (count === 0) {
+        setLiveClaimable((prev) => ({ ...prev, [holding.id]: 0 }));
+        return;
+      }
+
+      // Iterate through all distributions and sum up unclaimed amounts
+      let total = ethers.BigNumber.from(0);
+
+      for (let i = 0; i < count; i++) {
+        try {
+          const claimed: boolean = await contract.hasClaimed(i, account);
+          if (claimed) continue;
+
+          const amt: ethers.BigNumber = await contract.getClaimableDividend(i, account);
+          if (amt && !amt.isZero()) {
+            total = total.add(amt);
+          }
+        } catch (err) {
+          // Skip this distribution if there's an error
+          console.warn(`Error checking distribution ${i} for ${holding.dividendContractAddress}:`, err);
+          continue;
+        }
+      }
+
+      const hbar = parseFloat(ethers.utils.formatEther(total));
+      setLiveClaimable((prev) => ({ ...prev, [holding.id]: hbar }));
+    } catch (error) {
+      console.error("Error fetching live claimable amount:", error);
+      // Don't set state on error, let it fall back to the pre-computed value
+    }
+  }, [provider, account]);
+
+  // Toggle expanded and fetch live data when expanding
+  const onRowToggle = useCallback((holding: HoldingData) => {
+    const wasExpanded = expanded[holding.id];
+    toggleExpanded(holding.id);
+    
+    // Fetch live claimable when expanding (not collapsing)
+    if (!wasExpanded && !isDemoMode) {
+      fetchLiveClaimable(holding);
+    }
+  }, [expanded, toggleExpanded, fetchLiveClaimable, isDemoMode]);
 
   const handleClaimLatest = useCallback(
     async (
@@ -145,6 +214,9 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
           title: "Claim submitted",
           description: `Tx: ${txHash.substring(0, 10)}...`,
         });
+        
+        // Refresh live claimable amount after successful claim
+        await fetchLiveClaimable(holding);
       } catch (err: any) {
         toast({
           title: "Claim failed",
@@ -155,7 +227,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
         setClaimingId(null);
       }
     },
-    [claimDividend, getDistributionCount, toast]
+    [claimDividend, getDistributionCount, toast, fetchLiveClaimable]
   );
   // Convert PropertyHolding to HoldingData format
   const realHoldings: HoldingData[] = holdings.map((h) => ({
@@ -277,9 +349,11 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
         <TableBody>
           {displayHoldings.map((holding) => {
             const isExpanded = !!expanded[holding.id];
+            // Use live claimable amount if available, otherwise fall back to pre-computed value
+            const claimableAmount = liveClaimable[holding.id] ?? holding.claimableAmount ?? 0;
             return (
             <React.Fragment key={holding.id}>
-            <TableRow className="cursor-pointer" onClick={() => toggleExpanded(holding.id)}>
+            <TableRow className="cursor-pointer" onClick={() => onRowToggle(holding)}>
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Checkbox />
@@ -438,21 +512,23 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
 
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-xs text-[#0A0D14]">
-                        {holding.aiInsight}
+                        {claimableAmount > 0
+                          ? `${claimableAmount.toFixed(4)} HBAR dividends available to claim`
+                          : 'No dividends available yet'}
                       </div>
                       <button
                         className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition ${
-                          (holding.claimableAmount || 0) > 0
+                          claimableAmount > 0
                             ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
                             : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
                         }`}
-                        disabled={(holding.claimableAmount || 0) <= 0 || claimingId === holding.id}
+                        disabled={claimableAmount <= 0 || claimingId === holding.id}
                         onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
                       >
                         {claimingId === holding.id
                           ? "Claiming..."
-                          : (holding.claimableAmount || 0) > 0
-                          ? `Claim ${holding.claimableAmount!.toFixed(4)} HBAR`
+                          : claimableAmount > 0
+                          ? `Claim ${claimableAmount.toFixed(4)} HBAR`
                           : "Claim rewards"}
                       </button>
                     </div>
@@ -470,8 +546,10 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
       <div className="lg:hidden space-y-4 p-4">
         {displayHoldings.map((holding) => {
           const isExpanded = !!expanded[holding.id];
+          // Use live claimable amount if available, otherwise fall back to pre-computed value
+          const claimableAmount = liveClaimable[holding.id] ?? holding.claimableAmount ?? 0;
           return (
-          <div key={holding.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" onClick={() => toggleExpanded(holding.id)}>
+          <div key={holding.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" onClick={() => onRowToggle(holding)}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-[30px] h-[30px] rounded-md overflow-hidden bg-gradient-to-br from-blue-400 to-green-400 flex-shrink-0">
                 <img
@@ -584,22 +662,26 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                   </svg>
                   <div>
                     <div className="text-xs font-medium text-gray-700 mb-1">AI Insight</div>
-                    <div className="text-xs text-[#0A0D14]">{holding.aiInsight}</div>
+                    <div className="text-xs text-[#0A0D14]">
+                      {claimableAmount > 0
+                        ? `${claimableAmount.toFixed(4)} HBAR dividends available to claim`
+                        : 'No dividends available yet'}
+                    </div>
                   </div>
                 </div>
                 <button
                   className={`w-full inline-flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition ${
-                    (holding.claimableAmount || 0) > 0
+                    claimableAmount > 0
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
                       : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
                   }`}
-                  disabled={(holding.claimableAmount || 0) <= 0 || claimingId === holding.id}
+                  disabled={claimableAmount <= 0 || claimingId === holding.id}
                   onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
                 >
                   {claimingId === holding.id
                     ? "Claiming..."
-                    : (holding.claimableAmount || 0) > 0
-                    ? `Claim ${holding.claimableAmount!.toFixed(4)} HBAR`
+                    : claimableAmount > 0
+                    ? `Claim ${claimableAmount.toFixed(4)} HBAR`
                     : "Claim rewards"}
                 </button>
               </div>
