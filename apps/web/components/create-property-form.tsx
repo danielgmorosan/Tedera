@@ -167,6 +167,10 @@ export function CreatePropertyForm() {
         formDataUpload.append('file', formData.images[0]); // Use first image as main image
         
         const token = localStorage.getItem('hedera-auth-token');
+        if (!token) {
+          throw new Error('Authentication required. Please ensure your wallet is connected and you are authenticated.');
+        }
+        
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',
           headers: {
@@ -349,6 +353,10 @@ export function CreatePropertyForm() {
 
       // Call the API to create the property with real contract addresses
       const token = localStorage.getItem('hedera-auth-token');
+      if (!token) {
+        throw new Error('Authentication required. Please ensure your wallet is connected and you are authenticated.');
+      }
+      
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {
