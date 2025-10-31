@@ -16,6 +16,16 @@ import { useAuth } from "@/context/auth-context"
 import { useHederaWallet } from "@/context/hedera-wallet-context"
 import { useWallet } from "@/context/wallet-context"
 
+// Safe JSON parser to avoid crashes on empty or non-JSON responses
+async function parseJsonSafe(res: Response) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface PropertyFormData {
   title: string
   location: string
@@ -364,15 +374,18 @@ export function CreatePropertyForm() {
         }),
       });
 
+      console.log("[PropertyCreation] Response:", response.status, response.statusText);
+
       if (!response.ok) {
-        const error = await response.json();
+        const payload = await parseJsonSafe(response);
         if (response.status === 401) {
           throw new Error('Authentication failed. Please log in again or reconnect your wallet.');
         }
-        throw new Error(error.error || 'Failed to create property');
+        throw new Error(payload?.error || `HTTP ${response.status}`);
       }
 
-      const result = await response.json();
+      const result = (await parseJsonSafe(response)) || {};
+      console.log("[PropertyCreation] Parsed JSON:", result);
 
       // Store the created property
       const newProperty: CreatedProperty = {
