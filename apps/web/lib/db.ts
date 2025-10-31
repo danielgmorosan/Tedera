@@ -16,9 +16,10 @@ let cached: MongooseCache = global._mongooseCache || {
 if (!global._mongooseCache) global._mongooseCache = cached;
 
 export async function dbConnect() {
-  const MONGODB_URI = process.env.MONGODB_URI as string;
+  const MONGODB_URI = "mongodb+srv://asr3012003:DJDWHrDKDt1uEK4m@siddxcluster.2ffjy.mongodb.net/tedera?retryWrites=true&w=majority&appName=SiddxCluster"
+  console.log("MONGODB_URI", MONGODB_URI);
   if (!MONGODB_URI) {
-    throw new Error("Missing MONGODB_URI env");
+    throw new Error("Missing MONGODB_URI env adnan");
   }
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
