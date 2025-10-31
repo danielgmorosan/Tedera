@@ -6,7 +6,7 @@ import { WalletConnectButton } from "./wallet-connect-button";
 import { useWallet } from "@/context/wallet-context";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Copy, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, ExternalLink, LogOut } from "lucide-react";
 
 const navData = [
   {
@@ -97,6 +97,7 @@ export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const walletContext = useWallet();
   const account = walletContext?.account || null;
+  const disconnect = walletContext?.disconnect || (() => {});
 
   const copyAddress = () => {
     if (account) {
@@ -112,10 +113,15 @@ export default function Sidebar() {
     );
   };
 
+  const handleDisconnect = () => {
+    disconnect();
+  };
+
   return (
     <div 
       className={cn(
-        "flex flex-col items-start relative bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden",
+        "flex flex-col items-start relative bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden mt-2 mb-2",
+        "h-[calc(100vh-1rem)]",
         isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
       )}
     >
@@ -376,6 +382,15 @@ export default function Sidebar() {
                   </div>
                 </div>
               </div>
+              
+              {/* Disconnect Button */}
+              <button
+                onClick={handleDisconnect}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 mt-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-lg transition-colors duration-200 text-xs font-medium"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Disconnect Wallet</span>
+              </button>
             </div>
           ) : (
             <WalletConnectButton />
