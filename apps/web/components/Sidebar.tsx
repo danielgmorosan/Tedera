@@ -322,7 +322,7 @@ export default function Sidebar() {
               href={item.route}
               className={cn(
                 "border border-transparent hover:bg-slate-100 rounded-lg transition-colors duration-200 flex items-center w-full px-3 py-2.5 gap-3",
-                checkMatch && "bg-white border-gray-200"
+                checkMatch && "bg-white border-gray-200 pr-6"
               )}
             >
               <span className="flex-shrink-0 w-[18px] h-[18px]">

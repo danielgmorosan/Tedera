@@ -197,7 +197,7 @@ export default function PortfolioDashboard() {
           </p>
         </div>
       </div>
-      <div className="flex-1 flex flex-col gap-[24px] relative p-4 sm:p-6 lg:px-10 w-full">
+      <div className="flex-1 flex flex-col gap-[24px] relative px-4 sm:px-6 lg:px-10 py-4 sm:py-6 w-full max-w-full overflow-x-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
           <div className="flex flex-col gap-2">
             <p

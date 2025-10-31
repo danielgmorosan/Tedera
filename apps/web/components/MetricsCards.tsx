@@ -68,7 +68,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
   const maxProfit = Math.max(...profitChartData.map(d => d.amount || 0), 1);
 
   return (
-    <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px]  h-full relative  w-full">
+    <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px] h-full relative w-full min-w-0">
       {/* Total Invested Card - Chart Only */}
       <div className="bg-white box-border h-full content-stretch flex flex-col gap-[12px] overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full">
         <div
@@ -172,51 +172,46 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
           data-node-id="3:98667"
         >
           <div
-            className="content-stretch flex items-end justify-between relative shrink-0 w-full"
+            className="content-stretch flex items-baseline justify-between relative shrink-0 w-full gap-4"
             data-node-id="3:98668"
           >
             <div
-              className="content-stretch flex gap-[8px] items-end relative shrink-0"
+              className="content-stretch flex gap-[8px] items-baseline relative shrink-0 flex-shrink"
               data-node-id="3:98669"
             >
               <p
-                className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[20px] text-nowrap whitespace-pre"
+                className="font-['Inter_Display:SemiBold',_sans-serif] leading-none not-italic relative shrink-0 text-[#0a0d14] text-[20px] text-nowrap whitespace-pre"
                 data-node-id="3:98670"
               >
                 {formatHBAR(displayMetrics.totalDividendsReceived || 0)}
               </p>
               <div
-                className="content-stretch flex gap-[4px] items-center relative shrink-0"
-                data-node-id="3:98671"
+                className="content-stretch flex gap-[3px] items-baseline relative shrink-0"
+                data-node-id="3:98672"
               >
                 <div
-                  className="content-stretch flex gap-[3px] items-center relative shrink-0"
-                  data-node-id="3:98672"
+                  className="relative shrink-0 size-[8px] self-center"
+                  data-name="bxs:up-arrow"
+                  data-node-id="3:98673"
                 >
-                  <div
-                    className="relative shrink-0 size-[8px]"
-                    data-name="bxs:up-arrow"
-                    data-node-id="3:98673"
-                  >
-                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                      <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
-                    </svg>
-                  </div>
-                  <p
-                    className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
-                    data-node-id="3:98675"
-                  >
-                    {displayMetrics.roi?.toFixed(2) || '0.00'}%
-                  </p>
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="mt-[-2px]">
+                    <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
+                  </svg>
                 </div>
+                <p
+                  className="font-['Inter_Display:SemiBold',_sans-serif] leading-none not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
+                  data-node-id="3:98675"
+                >
+                  {displayMetrics.roi?.toFixed(2) || '0.00'}%
+                </p>
               </div>
             </div>
             <div
-              className="content-stretch flex gap-[3px] items-center leading-[1.4] not-italic relative shrink-0 text-nowrap whitespace-pre"
+              className="content-stretch flex gap-[3px] items-baseline leading-tight not-italic relative shrink-0 text-nowrap whitespace-pre"
               data-node-id="3:98676"
             >
               <p
-                className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] relative shrink-0 text-[#868c98] text-[11px]"
+                className="font-['Inter_Display:Medium',_sans-serif] relative shrink-0 text-[#868c98] text-[11px] leading-tight"
                 data-node-id="3:98678"
               >
                 Return on Investment
@@ -244,13 +239,12 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
             Available HBAR to Claim
           </p>
         </div>
-        <div className="basis-0 content-stretch flex grow items-end justify-between min-h-px min-w-px relative shrink-0 w-[272px]">
-          <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0">
-            <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre">
+        <div className="flex-1 content-stretch flex flex-col gap-4 grow min-h-0 relative shrink-0 w-full">
+          <div className="content-stretch flex flex-col gap-2 items-start relative shrink-0 w-full">
+            <p className="font-['Inter:Medium',_sans-serif] font-medium leading-none not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre">
               {formatHBAR(displayMetrics.totalProfit)}
             </p>
-          </div>
-          <div className="content-stretch flex gap-[2px] items-end relative shrink-0 w-[145px] pr-6">
+            <div className="content-stretch flex gap-[2px] items-end relative shrink-0 w-full">
             {profitChartData.length > 0 ? (
               profitChartData.map((item, index) => {
                 const height = maxProfit > 0 ? (item.amount / maxProfit) * 50 : 0;
@@ -299,6 +293,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 </div>
               ))
             )}
+            </div>
           </div>
         </div>
       </div>

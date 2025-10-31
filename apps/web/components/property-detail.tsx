@@ -719,14 +719,14 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                   <div className="text-sm text-slate-600 font-medium mb-3">
                     Distribution History (12 months)
                   </div>
-                  <div className="h-32 bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-all duration-200">
+                  <div className="h-32 bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-all duration-200 overflow-hidden">
                     {loadingDistributions ? (
                       <div className="h-full flex items-center justify-center">
                         <span className="text-slate-400 text-sm">Loading chart...</span>
                       </div>
                     ) : distributionHistory.length > 0 ? (
-                      <>
-                        <div className="h-full flex items-end justify-between space-x-1">
+                      <div className="h-full flex flex-col">
+                        <div className="flex-1 flex items-end gap-1 min-h-0 overflow-hidden pb-6">
                           {distributionHistory.map((data, index) => {
                             const intensity = Math.min(data.height / 100, 1);
                             const colorClass = 
@@ -738,19 +738,19 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                             return (
                               <div
                                 key={index}
-                                className={`flex-1 ${colorClass} rounded-t-sm transition-all duration-300 hover:opacity-80`}
+                                className={`flex-1 min-w-0 ${colorClass} rounded-t-sm transition-all duration-300 hover:opacity-80`}
                                 style={{ height: `${Math.max(data.height, 5)}%` }}
                                 title={`${data.month}: ${formatHBAR(data.amount)}`}
                               ></div>
                             );
                           })}
                         </div>
-                        <div className="flex justify-between text-xs text-slate-400 mt-2">
-                          <span>{distributionHistory[0]?.month || 'Jan'}</span>
-                          <span>{distributionHistory[Math.floor(distributionHistory.length / 2)]?.month || 'Jun'}</span>
-                          <span>{distributionHistory[distributionHistory.length - 1]?.month || 'Dec'}</span>
+                        <div className="flex justify-between text-xs text-slate-400 mt-2 px-0">
+                          <span className="truncate">{distributionHistory[0]?.month || 'Jan'}</span>
+                          <span className="truncate mx-2">{distributionHistory[Math.floor(distributionHistory.length / 2)]?.month || 'Jun'}</span>
+                          <span className="truncate">{distributionHistory[distributionHistory.length - 1]?.month || 'Dec'}</span>
                         </div>
-                      </>
+                      </div>
                     ) : (
                       <div className="h-full flex items-center justify-center">
                         <span className="text-slate-400 text-sm">No distribution data available</span>
