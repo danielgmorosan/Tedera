@@ -14,27 +14,19 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Coins, FileText, Shield, ExternalLink } from "lucide-react";
+import { CheckCircle, Coins, FileText, ExternalLink } from "lucide-react";
 
 interface EquityTokenForm {
   // Create Equity
   tokenName: string;
   tokenSymbol: string;
-  tokenDecimals: string;
   isin: string;
 
   // Specific Details
   nominalValue: string;
   currency: string;
   numberOfShares: string;
-  totalValue: string;
   chosenRights: string[];
-  dividendType: string;
-
-  // Regulation
-  regulationType: string;
-  regulationSubType: string;
-  blockedCountries: string[];
 }
 
 interface CreatedToken extends EquityTokenForm {
@@ -47,59 +39,24 @@ interface CreatedToken extends EquityTokenForm {
 
 const RIGHTS_OPTIONS = [
   "Voting Rights",
-  "Liquidation Rights",
   "Information Rights",
+  "Liquidation Rights",
+  "Subscription Rights",
   "Conversion Rights",
-  "Put Right",
-];
-
-const DIVIDEND_TYPES = [
-  "Fixed Dividend",
-  "Variable Dividend",
-  "Cumulative Dividend",
-  "Non-Cumulative Dividend",
-];
-
-const REGULATION_TYPES = [
-  "Regulation D",
-  "Regulation S",
-  "Regulation A+",
-  "Regulation CF",
-];
-
-const REGULATION_SUB_TYPES = [
-  "506(b)",
-  "506(c)",
-  "Rule 144A",
-  "Tier I",
-  "Tier II",
-];
-
-const COUNTRIES = [
-  "United States",
-  "China",
-  "Russia",
-  "Iran",
-  "North Korea",
-  "Syria",
-  "Cuba",
+  "Redemption Rights",
+  "Put Rights",
+  "Dividend Rights",
 ];
 
 export function CreateEquityTokenForm() {
   const [formData, setFormData] = useState<EquityTokenForm>({
     tokenName: "",
     tokenSymbol: "",
-    tokenDecimals: "18",
     isin: "",
     nominalValue: "",
     currency: "HBAR",
     numberOfShares: "",
-    totalValue: "",
     chosenRights: [],
-    dividendType: "",
-    regulationType: "",
-    regulationSubType: "",
-    blockedCountries: [],
   });
 
   const [isCreating, setIsCreating] = useState(false);
@@ -150,15 +107,6 @@ export function CreateEquityTokenForm() {
     }));
   };
 
-  const handleCountryChange = (country: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      blockedCountries: checked
-        ? [...prev.blockedCountries, country]
-        : prev.blockedCountries.filter((c) => c !== country),
-    }));
-  };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -170,15 +118,8 @@ export function CreateEquityTokenForm() {
       newErrors.nominalValue = "Nominal value is required";
     if (!formData.numberOfShares)
       newErrors.numberOfShares = "Number of shares is required";
-    if (!formData.totalValue) newErrors.totalValue = "Total value is required";
     if (formData.chosenRights.length === 0)
       newErrors.chosenRights = "At least one right must be selected";
-    if (!formData.dividendType)
-      newErrors.dividendType = "Dividend type is required";
-    if (!formData.regulationType)
-      newErrors.regulationType = "Regulation type is required";
-    if (!formData.regulationSubType)
-      newErrors.regulationSubType = "Regulation sub-type is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -293,17 +234,11 @@ export function CreateEquityTokenForm() {
       setFormData({
         tokenName: "",
         tokenSymbol: "",
-        tokenDecimals: "18",
         isin: "",
         nominalValue: "",
-        currency: "USD",
+        currency: "HBAR",
         numberOfShares: "",
-        totalValue: "",
         chosenRights: [],
-        dividendType: "",
-        regulationType: "",
-        regulationSubType: "",
-        blockedCountries: [],
       });
     } catch (error) {
       console.error("Error creating token:", error);
@@ -662,31 +597,6 @@ export function CreateEquityTokenForm() {
 
             <div className="space-y-2">
               <Label
-                htmlFor="tokenDecimals"
-                className="text-sm font-medium text-slate-700"
-              >
-                Token Decimals
-              </Label>
-              <Select
-                value={formData.tokenDecimals}
-                onValueChange={(value) =>
-                  handleInputChange("tokenDecimals", value)
-                }
-              >
-                <SelectTrigger className="rounded-xl border-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">0</SelectItem>
-                  <SelectItem value="6">6</SelectItem>
-                  <SelectItem value="8">8</SelectItem>
-                  <SelectItem value="18">18</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label
                 htmlFor="isin"
                 className="text-sm font-medium text-slate-700"
               >
@@ -768,52 +678,28 @@ export function CreateEquityTokenForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="numberOfShares"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Number of Shares (whole tokens)
-                </Label>
-                <Input
-                  id="numberOfShares"
-                  type="number"
-                  value={formData.numberOfShares}
-                  onChange={(e) =>
-                    handleInputChange("numberOfShares", e.target.value)
-                  }
-                  placeholder="1000"
-                  className={`rounded-xl border-slate-200 ${errors.numberOfShares ? "border-red-300" : ""}`}
-                />
-                {errors.numberOfShares && (
-                  <p className="text-red-500 text-xs">
-                    {errors.numberOfShares}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="totalValue"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Total Value (HBAR)
-                </Label>
-                <Input
-                  id="totalValue"
-                  type="number"
-                  value={formData.totalValue}
-                  onChange={(e) =>
-                    handleInputChange("totalValue", e.target.value)
-                  }
-                  placeholder="100000"
-                  className={`rounded-xl border-slate-200 ${errors.totalValue ? "border-red-300" : ""}`}
-                />
-                {errors.totalValue && (
-                  <p className="text-red-500 text-xs">{errors.totalValue}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="numberOfShares"
+                className="text-sm font-medium text-slate-700"
+              >
+                Number of Shares (whole tokens)
+              </Label>
+              <Input
+                id="numberOfShares"
+                type="number"
+                value={formData.numberOfShares}
+                onChange={(e) =>
+                  handleInputChange("numberOfShares", e.target.value)
+                }
+                placeholder="1000"
+                className={`rounded-xl border-slate-200 ${errors.numberOfShares ? "border-red-300" : ""}`}
+              />
+              {errors.numberOfShares && (
+                <p className="text-red-500 text-xs">
+                  {errors.numberOfShares}
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -840,147 +726,9 @@ export function CreateEquityTokenForm() {
                 <p className="text-red-500 text-xs">{errors.chosenRights}</p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="dividendType"
-                className="text-sm font-medium text-slate-700"
-              >
-                Dividend Type
-              </Label>
-              <Select
-                value={formData.dividendType}
-                onValueChange={(value) =>
-                  handleInputChange("dividendType", value)
-                }
-              >
-                <SelectTrigger
-                  className={`rounded-xl border-slate-200 ${errors.dividendType ? "border-red-300" : ""}`}
-                >
-                  <SelectValue placeholder="Select dividend type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIVIDEND_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.dividendType && (
-                <p className="text-red-500 text-xs">{errors.dividendType}</p>
-              )}
-            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Regulation Section */}
-      <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-        <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-xl">
-              <Shield className="h-5 w-5 text-emerald-600" />
-            </div>
-            <CardTitle className="text-lg font-semibold text-slate-900">
-              Regulation
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="regulationType"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Regulation Type
-                </Label>
-                <Select
-                  value={formData.regulationType}
-                  onValueChange={(value) =>
-                    handleInputChange("regulationType", value)
-                  }
-                >
-                  <SelectTrigger
-                    className={`rounded-xl border-slate-200 ${errors.regulationType ? "border-red-300" : ""}`}
-                  >
-                    <SelectValue placeholder="Select regulation type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REGULATION_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.regulationType && (
-                  <p className="text-red-500 text-xs">
-                    {errors.regulationType}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="regulationSubType"
-                  className="text-sm font-medium text-slate-700"
-                >
-                  Regulation Sub-type
-                </Label>
-                <Select
-                  value={formData.regulationSubType}
-                  onValueChange={(value) =>
-                    handleInputChange("regulationSubType", value)
-                  }
-                >
-                  <SelectTrigger
-                    className={`rounded-xl border-slate-200 ${errors.regulationSubType ? "border-red-300" : ""}`}
-                  >
-                    <SelectValue placeholder="Select regulation sub-type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REGULATION_SUB_TYPES.map((subType) => (
-                      <SelectItem key={subType} value={subType}>
-                        {subType}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.regulationSubType && (
-                  <p className="text-red-500 text-xs">
-                    {errors.regulationSubType}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-slate-700">
-                Blocked Countries
-              </Label>
-              <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto">
-                {COUNTRIES.map((country) => (
-                  <div key={country} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={country}
-                      checked={formData.blockedCountries.includes(country)}
-                      onCheckedChange={(checked) =>
-                        handleCountryChange(country, checked as boolean)
-                      }
-                    />
-                    <Label htmlFor={country} className="text-sm text-slate-600">
-                      {country}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Summary and Action */}
       <Card className="shadow-sm rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
@@ -1009,22 +757,7 @@ export function CreateEquityTokenForm() {
               )}
             </div>
             <Button
-              onClick={() => {
-                // Auto-compute total value if missing
-                if (
-                  !formData.totalValue &&
-                  formData.numberOfShares &&
-                  formData.nominalValue
-                ) {
-                  const total =
-                    Number(formData.numberOfShares) *
-                    Number(formData.nominalValue);
-                  if (!Number.isNaN(total)) {
-                    handleInputChange("totalValue", total.toString());
-                  }
-                }
-                handleCreateToken();
-              }}
+              onClick={handleCreateToken}
               disabled={
                 isCreating || !formData.tokenName || !formData.tokenSymbol
               }

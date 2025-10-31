@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { WalletConnectButton } from "./wallet-connect-button";
+import { useWallet } from "@/context/wallet-context";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Copy, ExternalLink } from "lucide-react";
 
 const navData = [
   {
@@ -92,14 +94,58 @@ const navData = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const walletContext = useWallet();
+  const account = walletContext?.account || null;
+
+  const copyAddress = () => {
+    if (account) {
+      navigator.clipboard.writeText(account);
+    }
+  };
+
+  const openExplorer = () => {
+    if (!account) return;
+    window.open(
+      `https://hashscan.io/testnet/account/${account}`,
+      "_blank"
+    );
+  };
 
   return (
-    <div className="flex flex-col items-center relative w-[80px] min-w-[80px] p-4 bg-gray-50">
-      <div className="box-border flex-1 w-full flex flex-col gap-[8px] items-center justify-start">
+    <div 
+      className={cn(
+        "flex flex-col items-start relative bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden",
+        isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
+      )}
+    >
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={cn(
+          "absolute z-10 p-1.5 rounded-lg hover:bg-slate-200 transition-all duration-200",
+          isExpanded ? "top-4 right-2" : "top-4 -right-2"
+        )}
+        aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {isExpanded ? (
+          <ChevronLeft className="h-4 w-4 text-slate-600" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-slate-600" />
+        )}
+      </button>
+
+      <div className={cn(
+        "box-border flex-1 w-full flex flex-col gap-[8px] transition-all duration-300",
+        isExpanded ? "items-start px-4" : "items-center px-4"
+      )}>
         {/* Logo */}
         <Link
           href="/"
-          className="bg-[#080912] relative rounded-[8px] shrink-0 size-[36px] flex items-center justify-center hover:bg-[#1a1a2e] transition-colors duration-200 cursor-pointer"
+          className={cn(
+            "bg-[#080912] relative rounded-[8px] shrink-0 size-[36px] flex items-center justify-center hover:bg-[#1a1a2e] transition-colors duration-200 cursor-pointer",
+            isExpanded && "mb-2"
+          )}
           data-name="Icons"
           data-node-id="3:26970"
         >
@@ -187,7 +233,7 @@ export default function Sidebar() {
           />
         </Link>
 
-        <div className="h-0.5 w-full bg-gray-200 my-3 rounded-lg " />
+        <div className="h-0.5 w-full bg-gray-200 my-3 rounded-lg" />
 
         {navData.map((item, index) => {
           const checkMatch =
@@ -264,18 +310,77 @@ export default function Sidebar() {
               key={index}
               href={item.route}
               className={cn(
-                "border border-transparent grid place-items-center hover:bg-slate-100 rounded-lg size-9",
+                "border border-transparent hover:bg-slate-100 rounded-lg transition-all duration-200 flex items-center gap-3",
+                isExpanded ? "w-full px-3 py-2.5" : "size-9 grid place-items-center",
                 checkMatch && "bg-white border-gray-200"
               )}
             >
-              {getDynamicIcon()}
+              <span className={cn("flex-shrink-0", isExpanded && "w-[18px] h-[18px]")}>
+                {getDynamicIcon()}
+              </span>
+              {isExpanded && (
+                <span className={cn(
+                  "text-sm font-medium whitespace-nowrap transition-opacity duration-300",
+                  checkMatch ? "text-slate-900" : "text-slate-600"
+                )}>
+                  {item.name}
+                </span>
+              )}
             </Link>
           );
         })}
 
-        <div className="h-0.5 w-full bg-gray-200 mb-3 mt-auto rounded-lg " />
+        <div className="h-0.5 w-full bg-gray-200 mb-3 mt-auto rounded-lg" />
 
-        <WalletConnectButton />
+        {/* Wallet Section */}
+        <div className={cn("w-full transition-all duration-300", !isExpanded && "flex justify-center")}>
+          {isExpanded && account ? (
+            <div className={cn(
+              "mb-3 p-3 bg-white rounded-lg border border-gray-200 space-y-3",
+              "transition-opacity duration-300 ease-in-out",
+              "opacity-100"
+            )}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-2 w-2 bg-emerald-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                <span className="text-xs font-medium text-slate-700">Connected Wallet</span>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Network</span>
+                  <span className="text-xs font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                    Hedera Testnet
+                  </span>
+                </div>
+                
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500">Address</span>
+                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200">
+                    <code className="text-xs font-mono text-slate-700 flex-1 truncate">
+                      {account.slice(0, 6)}...{account.slice(-4)}
+                    </code>
+                    <button
+                      onClick={copyAddress}
+                      className="p-1 hover:bg-slate-200 rounded transition-colors"
+                      title="Copy address"
+                    >
+                      <Copy className="h-3 w-3 text-slate-600" />
+                    </button>
+                    <button
+                      onClick={openExplorer}
+                      className="p-1 hover:bg-slate-200 rounded transition-colors"
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="h-3 w-3 text-slate-600" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <WalletConnectButton />
+          )}
+        </div>
       </div>
     </div>
   );

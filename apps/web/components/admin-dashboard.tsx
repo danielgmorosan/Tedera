@@ -13,10 +13,7 @@ import {
   Plus,
   DollarSign,
   Shield,
-  BarChart3,
   RefreshCw,
-  TrendingUp,
-  Users,
   Coins,
 } from "lucide-react";
 
@@ -110,7 +107,7 @@ export function AdminDashboard() {
 
         <Tabs defaultValue="equity" className="w-full">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
-            <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 p-2 h-auto rounded-none">
+            <TabsList className="grid w-full grid-cols-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 p-2 h-auto rounded-none">
               <TabsTrigger
                 value="equity"
                 className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl text-slate-600 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-emerald-200 transition-all font-medium text-[13px] whitespace-nowrap min-w-0"
@@ -135,14 +132,6 @@ export function AdminDashboard() {
                 <span className="hidden xs:inline sm:hidden">Profits</span>
                 <span className="xs:hidden sm:inline">Profit Distribution</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="analytics"
-                className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl text-slate-600 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-emerald-200 transition-all font-medium text-[13px] whitespace-nowrap min-w-0"
-              >
-                <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                <span className="hidden xs:inline sm:hidden">Stats</span>
-                <span className="xs:hidden sm:inline">Platform Analytics</span>
-              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="equity" className="p-8 mt-0">
@@ -155,129 +144,6 @@ export function AdminDashboard() {
 
             <TabsContent value="distributions" className="p-8 mt-0">
               <ProfitDistributionPanel />
-            </TabsContent>
-
-            <TabsContent value="analytics" className="p-0 mt-0">
-              <div className="p-6 sm:p-8 lg:p-10">
-                <div className="mb-6 sm:mb-8">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2.5 bg-emerald-100 rounded-2xl border border-emerald-100">
-                      <BarChart3 className="h-6 w-6 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                        Platform Analytics
-                      </h2>
-                      <p className="text-slate-600 text-sm mt-1">
-                        Monitor platform performance, user engagement, and
-                        financial metrics
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
-                  {/* Platform Metrics */}
-                  <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4 sm:pb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-xl">
-                          <TrendingUp className="h-5 w-5 text-emerald-600" />
-                        </div>
-                        <CardTitle className="text-lg font-semibold text-slate-900">
-                          Platform Performance
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            Total Volume (30d)
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            $2.4M
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            Active Transactions
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            156
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                          <span className="text-emerald-700 font-medium text-sm">
-                            Platform Fees Collected
-                          </span>
-                          <span className="font-semibold text-lg text-emerald-600">
-                            $12,450
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            Average Property Yield
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            8.7%
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* User Analytics */}
-                  <Card className="border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-                    <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4 sm:pb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-xl">
-                          <Users className="h-5 w-5 text-emerald-600" />
-                        </div>
-                        <CardTitle className="text-lg font-semibold text-slate-900">
-                          User Analytics
-                        </CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                          <span className="text-emerald-700 font-medium text-sm">
-                            New Users (30d)
-                          </span>
-                          <span className="font-semibold text-lg text-emerald-600">
-                            +89
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            KYC Verified Users
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            743
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            Average Investment
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            $15,250
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                          <span className="text-slate-600 font-medium text-sm">
-                            Retention Rate
-                          </span>
-                          <span className="font-semibold text-lg text-slate-900">
-                            87%
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
             </TabsContent>
           </div>
         </Tabs>
