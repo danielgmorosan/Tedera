@@ -125,22 +125,27 @@ export default function Sidebar() {
         "h-full",
         isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
       )}
+      style={{
+        transitionProperty: 'width',
+        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
     >
       <div className={cn(
         "box-border flex-1 w-full flex flex-col gap-[8px] transition-all duration-300",
         isExpanded ? "items-start px-4" : "items-center px-4"
       )}>
-        {/* Logo */}
-        <Link
-          href="/"
-          className={cn(
-            "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 transition-all duration-300 cursor-pointer overflow-hidden",
-            "h-[36px]",
-            isExpanded ? "w-full mb-2 justify-start" : "size-[36px] justify-center"
-          )}
-          data-name="Icons"
-          data-node-id="3:26970"
-        >
+        {/* Logo - positioned lower with padding-top */}
+        <div className="pt-4">
+          <Link
+            href="/"
+            className={cn(
+              "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 transition-all duration-300 cursor-pointer overflow-hidden",
+              "h-[36px]",
+              isExpanded ? "w-full mb-2 justify-start" : "size-[36px] justify-center mx-auto"
+            )}
+            data-name="Icons"
+            data-node-id="3:26970"
+          >
           {/* Square Logo (Collapsed View) */}
           <div
             className={cn(
@@ -235,7 +240,7 @@ export default function Sidebar() {
           {/* Tedera Logo (Expanded View) */}
           <div
             className={cn(
-              "flex items-center transition-opacity duration-300",
+              "flex items-center transition-all duration-300",
               isExpanded ? "opacity-100 visible" : "opacity-0 invisible absolute inset-0"
             )}
           >
@@ -249,6 +254,7 @@ export default function Sidebar() {
             />
           </div>
         </Link>
+        </div>
 
         <div className="h-0.5 w-full bg-gray-200 my-3 rounded-lg" />
 
@@ -351,8 +357,8 @@ export default function Sidebar() {
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
-            "flex items-center justify-center gap-2 rounded-lg hover:bg-slate-100 transition-all duration-200 text-slate-600 hover:text-slate-900",
-            isExpanded ? "w-full px-3 py-2" : "size-9 mx-auto"
+            "flex items-center gap-2 rounded-lg hover:bg-slate-100 transition-all duration-200 text-slate-600 hover:text-slate-900",
+            isExpanded ? "w-full px-3 py-2 justify-start" : "size-9 mx-auto justify-center"
           )}
           aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
