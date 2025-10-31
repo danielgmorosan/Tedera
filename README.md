@@ -74,7 +74,7 @@ Pretty standard monorepo setup. The contracts live in a separate package so we c
 
 1. **Clone and install**
 ```bash
-git clone <your-repo>
+git clone
 cd Tedera
 npm install
 ```
