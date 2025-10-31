@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Building,
@@ -9,70 +10,249 @@ import {
   Leaf,
   Sun,
   Home,
-  Info,
 } from "lucide-react";
 
+interface Property {
+  _id?: string;
+  id?: string;
+  name: string;
+  type?: "forest" | "solar" | "real-estate";
+  totalShares?: number;
+  pricePerShare?: number;
+  expectedYield?: number;
+  availableShares?: number;
+  status?: "open" | "closed";
+  createdAt?: string;
+}
+
+interface AssetBreakdown {
+  type: string;
+  count: number;
+  icon: typeof Leaf;
+  color: string;
+  bgColor: string;
+  image: string;
+  saleProgress: number;
+}
+
 export function AdminStats() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Total Properties",
-      value: "6",
-      change: "+2 this month",
+      value: "0",
+      change: "0 this month",
       icon: Building,
       color: "text-slate-500",
     },
     {
       title: "Active Investors",
-      value: "1,247",
-      change: "+89 this month",
+      value: "0",
+      change: "0 this month",
       icon: Users,
       color: "text-slate-500",
     },
     {
       title: "Total Asset Value",
-      value: "$26.7M",
-      change: "+$3.2M this month",
+      value: "$0",
+      change: "$0 this month",
       icon: DollarSign,
       color: "text-slate-500",
     },
     {
       title: "Avg. Platform Yield",
-      value: "8.7%",
-      change: "+0.3% this month",
+      value: "0%",
+      change: "0% this month",
       icon: TrendingUp,
       color: "text-slate-500",
     },
-  ];
+  ]);
 
-  const assetBreakdown = [
+  const [assetBreakdown, setAssetBreakdown] = useState<AssetBreakdown[]>([
     {
       type: "Forest Assets",
-      count: 2,
+      count: 0,
       icon: Leaf,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       image: "/lush-green-forest-with-tall-trees-and-sunlight.jpg",
-      saleProgress: 85,
+      saleProgress: 0,
     },
     {
       type: "Energy Projects",
-      count: 2,
+      count: 0,
       icon: Sun,
       color: "text-amber-600",
       bgColor: "bg-amber-50",
       image: "/modern-solar-panels-and-wind-turbines-renewable-en.jpg",
-      saleProgress: 62,
+      saleProgress: 0,
     },
     {
       type: "Real Estate",
-      count: 2,
+      count: 0,
       icon: Home,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       image: "/modern-luxury-residential-building-with-clean-arch.jpg",
-      saleProgress: 43,
+      saleProgress: 0,
     },
-  ];
+  ]);
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/properties');
+        if (!response.ok) {
+          throw new Error('Failed to fetch properties');
+        }
+        const data = await response.json();
+        const properties: Property[] = data.properties || [];
+
+        // Calculate stats
+        const totalProperties = properties.length;
+        
+        // Calculate total asset value (sum of totalShares * pricePerShare for all properties)
+        const totalAssetValue = properties.reduce((sum, prop) => {
+          const totalValue = (prop.totalShares || 0) * (prop.pricePerShare || 0);
+          // Convert from HBAR to USD (assuming 1 HBAR = $0.05)
+          return sum + (totalValue * 0.05);
+        }, 0);
+
+        // Calculate average yield
+        const yields = properties
+          .map(p => p.expectedYield || 0)
+          .filter(y => y > 0);
+        const avgYield = yields.length > 0
+          ? yields.reduce((sum, y) => sum + y, 0) / yields.length
+          : 0;
+
+        // Count properties created this month
+        const now = new Date();
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const propertiesThisMonth = properties.filter(p => {
+          if (p.createdAt) {
+            const createdAt = new Date(p.createdAt);
+            return createdAt >= thisMonth;
+          }
+          // Fallback: use _id timestamp if createdAt not available
+          if (p._id) {
+            try {
+              const timestamp = parseInt(p._id.toString().substring(0, 8), 16) * 1000;
+              const createdAt = new Date(timestamp);
+              return createdAt >= thisMonth;
+            } catch {
+              return false;
+            }
+          }
+          return false;
+        }).length;
+
+        // Update stats
+        setStats([
+          {
+            title: "Total Properties",
+            value: totalProperties.toString(),
+            change: `+${propertiesThisMonth} this month`,
+            icon: Building,
+            color: "text-slate-500",
+          },
+          {
+            title: "Active Investors",
+            value: "0", // TODO: Fetch from investments API if needed
+            change: "0 this month",
+            icon: Users,
+            color: "text-slate-500",
+          },
+          {
+            title: "Total Asset Value",
+            value: totalAssetValue >= 1000000
+              ? `$${(totalAssetValue / 1000000).toFixed(1)}M`
+              : totalAssetValue >= 1000
+              ? `$${(totalAssetValue / 1000).toFixed(1)}K`
+              : `$${totalAssetValue.toFixed(0)}`,
+            change: "$0 this month", // TODO: Calculate month-over-month change
+            icon: DollarSign,
+            color: "text-slate-500",
+          },
+          {
+            title: "Avg. Platform Yield",
+            value: `${avgYield.toFixed(1)}%`,
+            change: "0% this month", // TODO: Calculate month-over-month change
+            icon: TrendingUp,
+            color: "text-slate-500",
+          },
+        ]);
+
+        // Calculate asset breakdown
+        const forestProps = properties.filter(p => p.type === 'forest');
+        const solarProps = properties.filter(p => p.type === 'solar');
+        const realEstateProps = properties.filter(p => !p.type || p.type === 'real-estate');
+
+        // Calculate sale progress for each type
+        const calculateSaleProgress = (props: Property[]) => {
+          if (props.length === 0) return 0;
+          const totalShares = props.reduce((sum, p) => sum + (p.totalShares || 0), 0);
+          const availableShares = props.reduce((sum, p) => sum + (p.availableShares || p.totalShares || 0), 0);
+          if (totalShares === 0) return 0;
+          return Math.round(((totalShares - availableShares) / totalShares) * 100);
+        };
+
+        setAssetBreakdown([
+          {
+            type: "Forest Assets",
+            count: forestProps.length,
+            icon: Leaf,
+            color: "text-emerald-600",
+            bgColor: "bg-emerald-50",
+            image: "/lush-green-forest-with-tall-trees-and-sunlight.jpg",
+            saleProgress: calculateSaleProgress(forestProps),
+          },
+          {
+            type: "Energy Projects",
+            count: solarProps.length,
+            icon: Sun,
+            color: "text-amber-600",
+            bgColor: "bg-amber-50",
+            image: "/modern-solar-panels-and-wind-turbines-renewable-en.jpg",
+            saleProgress: calculateSaleProgress(solarProps),
+          },
+          {
+            type: "Real Estate",
+            count: realEstateProps.length,
+            icon: Home,
+            color: "text-blue-600",
+            bgColor: "bg-blue-50",
+            image: "/modern-luxury-residential-building-with-clean-arch.jpg",
+            saleProgress: calculateSaleProgress(realEstateProps),
+          },
+        ]);
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white box-border flex flex-col gap-3 items-start overflow-clip p-4 relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] h-full animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-24"></div>
+              <div className="h-8 bg-slate-200 rounded w-16"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 mb-8">

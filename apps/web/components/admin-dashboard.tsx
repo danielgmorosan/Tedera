@@ -15,14 +15,12 @@ import {
   Shield,
   BarChart3,
   RefreshCw,
-  AlertTriangle,
   TrendingUp,
   Users,
   Coins,
 } from "lucide-react";
 
 export function AdminDashboard() {
-  const [kycEnabled, setKycEnabled] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
   const handleResetDemo = async () => {
@@ -109,63 +107,6 @@ export function AdminDashboard() {
         <div className="mb-6 sm:mb-8 lg:mb-10">
           <AdminStats />
         </div>
-
-        <Card className="mb-6 sm:mb-8 lg:mb-10 border-0 shadow-sm rounded-2xl overflow-hidden bg-white">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div
-                  className={`p-2 sm:p-3 rounded-xl flex-shrink-0 transition-all duration-200 ${
-                    kycEnabled
-                      ? "bg-emerald-100 shadow-emerald-100/50 shadow-sm"
-                      : "bg-slate-100 shadow-slate-100/50 shadow-sm"
-                  }`}
-                >
-                  {kycEnabled ? (
-                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-slate-500" />
-                  )}
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg sm:text-xl font-semibold text-slate-900">
-                      KYC Verification
-                    </h3>
-                    <Badge
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        kycEnabled
-                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                          : "bg-slate-100 text-slate-600 border border-slate-200"
-                      }`}
-                    >
-                      {kycEnabled ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-2xl">
-                    {kycEnabled
-                      ? "Identity verification is required for all property investments."
-                      : "Open access mode - all wallets can purchase without verification."}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-row gap-2 lg:flex-col lg:gap-2">
-                <Button
-                  onClick={() => setKycEnabled(!kycEnabled)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-sm px-5 py-3 transition-colors duration-200"
-                >
-                  {kycEnabled ? "Disable" : "Enable"}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-semibold text-sm px-5 py-3 transition-colors duration-200"
-                >
-                  Settings
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Tabs defaultValue="equity" className="w-full">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
