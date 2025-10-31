@@ -9,7 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { PropertyHolding } from "@/lib/services/portfolioService";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useDividendDistribution } from "@/hooks/use-dividend-distribution";
 import { useWallet } from "@/context/wallet-context";
@@ -123,8 +123,15 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
   const fetchLiveClaimable = useCallback(async (holding: HoldingData) => {
     try {
       if (!provider || !account || !holding.dividendContractAddress) {
+        console.log('⚠️ Cannot fetch live claimable:', {
+          hasProvider: !!provider,
+          hasAccount: !!account,
+          hasContract: !!holding.dividendContractAddress,
+        });
         return;
       }
+
+      console.log(`🔍 Fetching live claimable for ${holding.name} from ${holding.dividendContractAddress}`);
 
       const abi = [
         "function getDistributionCount() view returns (uint256)",
@@ -140,8 +147,10 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
 
       const countBN = await contract.getDistributionCount();
       const count = parseInt(countBN.toString(), 10);
+      console.log(`📊 Found ${count} distributions for ${holding.name}`);
 
       if (count === 0) {
+        console.log(`📊 No distributions found for ${holding.name}`);
         setLiveClaimable((prev) => ({ ...prev, [holding.id]: 0 }));
         return;
       }
@@ -152,9 +161,11 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
       for (let i = 0; i < count; i++) {
         try {
           const claimed: boolean = await contract.hasClaimed(i, account);
+          console.log(`  Distribution ${i}: claimed=${claimed}`);
           if (claimed) continue;
 
           const amt: ethers.BigNumber = await contract.getClaimableDividend(i, account);
+          console.log(`  Distribution ${i}: claimable=${ethers.utils.formatEther(amt)} HBAR`);
           if (amt && !amt.isZero()) {
             total = total.add(amt);
           }
@@ -166,10 +177,11 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
       }
 
       const hbar = parseFloat(ethers.utils.formatEther(total));
+      console.log(`✅ Total claimable for ${holding.name}: ${hbar} HBAR`);
       setLiveClaimable((prev) => ({ ...prev, [holding.id]: hbar }));
     } catch (error) {
-      console.error("Error fetching live claimable amount:", error);
-      // Don't set state on error, let it fall back to the pre-computed value
+      console.error("❌ Error fetching live claimable amount:", error);
+      setLiveClaimable((prev) => ({ ...prev, [holding.id]: 0 }));
     }
   }, [provider, account]);
 
@@ -180,7 +192,10 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
     
     // Fetch live claimable when expanding (not collapsing)
     if (!wasExpanded && !isDemoMode) {
-      fetchLiveClaimable(holding);
+      // Delay to let state commit first
+      setTimeout(() => {
+        fetchLiveClaimable(holding);
+      }, 0);
     }
   }, [expanded, toggleExpanded, fetchLiveClaimable, isDemoMode]);
 
@@ -252,6 +267,19 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
   }));
 
   const displayHoldings = isDemoMode ? mockHoldings : realHoldings;
+
+  // Optional: fetch live claimables for expanded rows when dependencies change
+  useEffect(() => {
+    if (isDemoMode || !provider || !account) return;
+    Object.keys(expanded).forEach((id) => {
+      if (expanded[id]) {
+        const h = displayHoldings.find((x) => x.id === id);
+        if (h && h.dividendContractAddress) {
+          fetchLiveClaimable(h);
+        }
+      }
+    });
+  }, [expanded, provider, account, isDemoMode, fetchLiveClaimable, displayHoldings]);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
