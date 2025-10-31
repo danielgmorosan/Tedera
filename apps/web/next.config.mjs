@@ -12,7 +12,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  outputFileTracingRoot: '/Users/souheila/testhedera/hedera-hackathon/apps/web',
+  // outputFileTracingRoot removed to avoid breaking Vercel's tracing on deploy
   webpack: (config, { isServer, webpack }) => {
     // Handle Node.js built-in modules
     config.resolve.fallback = {
