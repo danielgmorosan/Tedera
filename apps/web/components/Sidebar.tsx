@@ -146,7 +146,7 @@ export default function Sidebar() {
             className={cn(
               "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 cursor-pointer overflow-hidden",
               "h-[36px]",
-              isExpanded ? "w-[36px] mb-2 justify-start" : "size-[36px] justify-center mx-auto"
+              isExpanded ? "mb-2 justify-start gap-3" : "size-[36px] justify-center mx-auto"
             )}
             style={{
               transition: 'none',
@@ -156,7 +156,7 @@ export default function Sidebar() {
           >
           {/* Square Logo - Always visible, aligned left when expanded */}
           <div
-            className="relative bg-[#080912] rounded-[8px] flex items-center justify-center pointer-events-none"
+            className="relative bg-[#080912] rounded-[8px] flex items-center justify-center pointer-events-none shrink-0"
             style={{
               width: '36px',
               height: '36px',
@@ -246,6 +246,18 @@ export default function Sidebar() {
               className="absolute border border-[#080912] border-solid inset-0 pointer-events-none rounded-[8px] shadow-[0px_9px_6px_-8px_rgba(29,30,65,0.7),0px_0px_0px_1.5px_rgba(190,202,234,0.29)]"
             />
           </div>
+          
+          {/* Tedera text - Only visible when expanded */}
+          {isExpanded && (
+            <span 
+              className="text-black font-semibold text-base leading-none whitespace-nowrap"
+              style={{
+                fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              Tedera
+            </span>
+          )}
 
         </Link>
         </div>
