@@ -36,31 +36,34 @@ export interface PropertyHolding {
   sharesOwned: number;
   totalShares: number;
   pricePerShare: number;
-  currentValue: number;
-  investedAmount: number;
+  currentValue: number; // in HBAR
+  investedAmount: number; // in HBAR
   gainLoss: {
     amount: number;
-    percentage: number;
+    percentage: number; // % of investment made back through dividends
     isGain: boolean;
   };
   expectedYield: number;
-  claimableDividends: number;
+  claimableDividends: number; // in HBAR
+  totalDividendsReceived: number; // in HBAR (all dividends including claimed)
   status: 'active' | 'sold';
 }
 
 export interface PortfolioMetrics {
-  totalInvested: number;
-  currentValue: number;
-  totalProfit: number;
+  totalInvested: number; // in HBAR
+  currentValue: number; // in HBAR
+  totalProfit: number; // in HBAR (claimable dividends)
+  totalDividendsReceived: number; // in HBAR (total dividends received including claimed)
+  roi: number; // ROI as percentage (totalDividendsReceived / totalInvested * 100)
   totalReturn: {
-    amount: number;
+    amount: number; // in USD
     percentage: number;
   };
   totalHoldings: number;
   activeProperties: number;
   // Historical data for charts
-  monthlyProfit: Array<{ month: string; amount: number }>;
-  investmentHistory: Array<{ date: string; amount: number }>;
+  monthlyProfit: Array<{ month: string; amount: number }>; // in HBAR
+  investmentHistory: Array<{ date: string; amount: number }>; // in HBAR
   monthlyChange: number;
 }
 
@@ -265,17 +268,21 @@ export async function fetchUserPortfolio(
         provider
       );
       
-      // Calculate invested amount (shares owned × price per share)
+      // Calculate invested amount (shares owned × price per share) in HBAR
       const investedAmount = sharesOwned * saleDetails.pricePerShare;
       
       // For now, current value = invested amount (no price appreciation yet)
       // In a real system, you'd fetch current market price
       const currentValue = investedAmount;
       
-      // Calculate gain/loss
-      const gainLossAmount = currentValue - investedAmount;
-      const gainLossPercentage = investedAmount > 0 
-        ? (gainLossAmount / investedAmount) * 100 
+      // Calculate total dividends received for this property
+      // We'll fetch this in calculatePortfolioMetrics, for now set to 0
+      let totalDividendsReceived = 0;
+      
+      // Calculate gain/loss based on % of investment made back through dividends
+      // This will be updated in calculatePortfolioMetrics when we fetch distributions
+      const gainLossPercentage = investedAmount > 0 && totalDividendsReceived > 0
+        ? (totalDividendsReceived / investedAmount) * 100 
         : 0;
       
       holdings.push({
@@ -293,12 +300,13 @@ export async function fetchUserPortfolio(
         currentValue,
         investedAmount,
         gainLoss: {
-          amount: gainLossAmount,
+          amount: totalDividendsReceived - investedAmount,
           percentage: gainLossPercentage,
-          isGain: gainLossAmount >= 0,
+          isGain: totalDividendsReceived >= 0,
         },
         expectedYield: parseFloat(property.expectedYield) || 0,
         claimableDividends,
+        totalDividendsReceived, // Will be updated in calculatePortfolioMetrics
         status: saleDetails.saleActive ? 'active' : 'sold',
       });
     }
@@ -318,19 +326,24 @@ export async function calculatePortfolioMetrics(
   holdings: PropertyHolding[],
   authToken?: string
 ): Promise<PortfolioMetrics> {
-  const totalInvested = holdings.reduce((sum, h) => sum + h.investedAmount, 0);
-  const currentValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
-  const totalProfit = holdings.reduce((sum, h) => sum + h.claimableDividends, 0);
+  // Convert invested amount to HBAR (assuming pricePerShare is in HBAR)
+  const totalInvested = holdings.reduce((sum, h) => sum + h.investedAmount, 0); // in HBAR
+  const currentValue = holdings.reduce((sum, h) => sum + h.currentValue, 0); // in HBAR
+  const totalProfit = holdings.reduce((sum, h) => sum + h.claimableDividends, 0); // in HBAR (claimable)
   
-  const totalReturnAmount = currentValue - totalInvested + totalProfit;
+  // Calculate total return in USD (for display)
+  // Assuming 1 HBAR = ~$0.05 for conversion (this should come from an exchange rate API in production)
+  const HBAR_TO_USD_RATE = 0.05;
+  const totalReturnAmount = (currentValue - totalInvested + totalProfit) * HBAR_TO_USD_RATE;
   const totalReturnPercentage = totalInvested > 0 
-    ? (totalReturnAmount / totalInvested) * 100 
+    ? (totalReturnAmount / (totalInvested * HBAR_TO_USD_RATE)) * 100 
     : 0;
 
-  // Fetch historical distribution data for charts
+  // Fetch historical distribution data for charts and calculate total dividends received
   const monthlyProfit: Array<{ month: string; amount: number }> = [];
   const investmentHistory: Array<{ date: string; amount: number }> = [];
   let monthlyChange = 0;
+  let totalDividendsReceived = 0; // Total dividends received including claimed
 
   try {
     const token = authToken || (typeof window !== 'undefined' ? localStorage.getItem('hedera-auth-token') : null);
@@ -339,6 +352,9 @@ export async function calculatePortfolioMetrics(
       // Fetch distributions for each property
       const monthlyMap = new Map<string, number>();
       const propertyDistributions: Array<{ date: Date; amount: number }> = [];
+
+      // Create a map to store dividends per property
+      const dividendsPerProperty = new Map<string, number>();
 
       for (const holding of holdings) {
         try {
@@ -351,6 +367,7 @@ export async function calculatePortfolioMetrics(
           if (response.ok) {
             const data = await response.json();
             const distributions = data.distributions || [];
+            let propertyTotalDividends = 0;
 
             for (const dist of distributions) {
               if (dist.executedAt || dist.createdAt) {
@@ -359,14 +376,34 @@ export async function calculatePortfolioMetrics(
                 const userShare = holding.sharesOwned / holding.totalShares;
                 const userAmount = (dist.totalAmount || 0) * userShare;
 
+                // Add to property total and global total
+                propertyTotalDividends += userAmount;
+                totalDividendsReceived += userAmount;
+
                 monthlyMap.set(month, (monthlyMap.get(month) || 0) + userAmount);
                 propertyDistributions.push({ date, amount: userAmount });
               }
             }
+            
+            // Store dividends for this property to update holding later
+            dividendsPerProperty.set(holding.propertyId, propertyTotalDividends);
           }
         } catch (err) {
           console.warn(`Error fetching distributions for ${holding.propertyId}:`, err);
         }
+      }
+      
+      // Update holdings with total dividends received and recalculate gain/loss
+      for (const holding of holdings) {
+        const propertyDividends = dividendsPerProperty.get(holding.propertyId) || 0;
+        holding.totalDividendsReceived = propertyDividends;
+        
+        // Recalculate gain/loss as % of investment made back through dividends
+        holding.gainLoss.percentage = holding.investedAmount > 0 
+          ? (propertyDividends / holding.investedAmount) * 100 
+          : 0;
+        holding.gainLoss.amount = propertyDividends - holding.investedAmount;
+        holding.gainLoss.isGain = propertyDividends >= 0;
       }
 
       // Convert monthly map to array for last 5 months
@@ -392,8 +429,7 @@ export async function calculatePortfolioMetrics(
         monthlyChange = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
       }
 
-      // Generate investment history (simplified - can be enhanced with actual purchase dates)
-      // For now, we'll simulate gradual investment growth over the last 30 days
+      // Generate investment history in HBAR over the last 30 days
       const nowDate = new Date();
       for (let i = 29; i >= 0; i--) {
         const date = new Date(nowDate);
@@ -428,18 +464,23 @@ export async function calculatePortfolioMetrics(
     }
   }
   
+  // Calculate ROI as percentage of invested amount made back from dividends
+  const roi = totalInvested > 0 ? (totalDividendsReceived / totalInvested) * 100 : 0;
+  
   return {
-    totalInvested,
-    currentValue,
-    totalProfit,
+    totalInvested, // in HBAR
+    currentValue, // in HBAR
+    totalProfit, // in HBAR (claimable)
+    totalDividendsReceived, // in HBAR (all dividends received)
+    roi, // percentage
     totalReturn: {
-      amount: totalReturnAmount,
+      amount: totalReturnAmount, // in USD
       percentage: totalReturnPercentage,
     },
     totalHoldings: holdings.length,
     activeProperties: holdings.filter(h => h.status === 'active').length,
-    monthlyProfit,
-    investmentHistory,
+    monthlyProfit, // in HBAR
+    investmentHistory, // in HBAR
     monthlyChange,
   };
 }

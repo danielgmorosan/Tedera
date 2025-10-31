@@ -20,11 +20,10 @@ interface HoldingData {
   name: string;
   category: string;
   sharesOwned: number;
-  oldPrice: number;
-  value: number;
+  value: number; // in HBAR
   yield: number;
   gainLoss: {
-    percentage: number;
+    percentage: number; // % of investment made back through dividends
     isGain: boolean;
   };
   status: "sell" | "sold" | "hold";
@@ -260,11 +259,10 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
     name: h.propertyName,
     category: h.category,
     sharesOwned: h.sharesOwned,
-    oldPrice: h.pricePerShare,
-    value: h.currentValue,
+    value: h.currentValue, // in HBAR
     yield: h.expectedYield,
     gainLoss: {
-      percentage: h.gainLoss.percentage,
+      percentage: h.gainLoss.percentage, // % of investment made back through dividends
       isGain: h.gainLoss.isGain,
     },
     status: h.status === 'active' ? 'hold' : 'sold',
@@ -360,9 +358,6 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
             </TableHead>
             <TableHead className="w-[101px] text-xs text-muted-foreground font-medium">
               Shares owned
-            </TableHead>
-            <TableHead className="w-[101px] text-xs text-muted-foreground font-medium">
-              Old Price
             </TableHead>
             <TableHead className="w-[102px] text-xs text-muted-foreground font-medium">
               Value
@@ -463,12 +458,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </TableCell>
               <TableCell>
                 <span className="text-xs font-medium text-[#0A0D14]">
-                  ${holding.oldPrice.toLocaleString()}
-                </span>
-              </TableCell>
-              <TableCell>
-                <span className="text-xs font-medium text-[#0A0D14]">
-                  ${holding.value.toLocaleString()}
+                  {formatHBAR(holding.value)}
                 </span>
               </TableCell>
               <TableCell>
@@ -535,14 +525,14 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               <TableRow className="bg-neutral-50">
                 <TableCell colSpan={10}>
                   <div className="flex flex-col gap-3 p-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="text-xs text-gray-600">
                         <div className="font-medium text-gray-900">Shares Owned</div>
                         <div className="mt-1">{holding.sharesOwned}</div>
                       </div>
                       <div className="text-xs text-gray-600">
-                        <div className="font-medium text-gray-900">Current Value</div>
-                        <div className="mt-1">${holding.value.toLocaleString()}</div>
+                        <div className="font-medium text-gray-900">Value</div>
+                        <div className="mt-1">{formatHBAR(holding.value)}</div>
                       </div>
                       <div className="text-xs text-gray-600">
                         <div className="font-medium text-gray-900">Yield</div>
@@ -653,11 +643,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </div>
               <div>
                 <div className="text-xs text-gray-600 mb-1">Value</div>
-                <div className="text-sm font-medium text-[#0A0D14]">${holding.value.toLocaleString()}</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-600 mb-1">Old Price</div>
-                <div className="text-sm font-medium text-[#0A0D14]">${holding.oldPrice.toLocaleString()}</div>
+                <div className="text-sm font-medium text-[#0A0D14]">{formatHBAR(holding.value)}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-600 mb-1">Yield</div>

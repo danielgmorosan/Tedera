@@ -9,21 +9,23 @@ interface MetricsCardsProps {
 export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps) {
   // Demo data
   const demoMetrics = {
-    totalInvested: 98450,
-    currentValue: 125430.50,
-    totalProfit: 45.2,
+    totalInvested: 98450, // in HBAR
+    currentValue: 125430.50, // in HBAR
+    totalProfit: 45.2, // in HBAR (claimable)
+    totalDividendsReceived: 1234.5, // in HBAR (all dividends)
+    roi: 1.25, // ROI as percentage
     totalReturn: {
-      amount: 26980.50,
+      amount: 26980.50, // in USD
       percentage: 27.4,
     },
     totalHoldings: 150,
     activeProperties: 102,
     monthlyProfit: [
-      { month: 'Apr', amount: 150 },
-      { month: 'May', amount: 220 },
-      { month: 'Jun', amount: 180 },
-      { month: 'Jul', amount: 160 },
-      { month: 'Aug', amount: 250 },
+      { month: 'Jun', amount: 150 },
+      { month: 'Jul', amount: 220 },
+      { month: 'Aug', amount: 180 },
+      { month: 'Sep', amount: 160 },
+      { month: 'Oct', amount: 250 },
     ],
     investmentHistory: Array.from({ length: 30 }, (_, i) => ({
       date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -34,7 +36,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
 
   const displayMetrics = isDemoMode ? demoMetrics : metrics;
 
-  // Format currency
+  // Format currency (USD)
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -42,6 +44,15 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Format HBAR (similar to formatHBAR in HoldingsTable)
+  const formatHBAR = (amount: number): string => {
+    const rounded = Math.round(amount * 100) / 100; // Round to 2 decimals
+    if (rounded % 1 === 0) {
+      return `${Math.round(rounded)} HBAR`;
+    }
+    return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
   };
 
   // Get monthly change (use real data if available)
@@ -55,11 +66,6 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
   // Prepare monthly profit data for bar chart
   const profitChartData = displayMetrics.monthlyProfit || [];
   const maxProfit = Math.max(...profitChartData.map(d => d.amount || 0), 1);
-
-  // Calculate current value progress (as percentage of a goal - could be based on total invested * 1.2)
-  const valueGoal = displayMetrics.totalInvested * 1.2; // 20% growth goal
-  const valueProgress = valueGoal > 0 ? (displayMetrics.currentValue / valueGoal) * 100 : 0;
-  const valueProgressPercentage = Math.min(100, Math.max(0, valueProgress));
 
   return (
     <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px]  h-full relative  w-full">
@@ -88,39 +94,14 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               className="css-k0nvzb font-['Inter:Semi_Bold',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre"
               data-node-id="2:4720"
             >
-              {formatCurrency(displayMetrics.totalInvested)}
+              {formatHBAR(displayMetrics.totalInvested)}
             </p>
-            <div
-              className="content-stretch flex gap-[6px] items-center relative shrink-0"
-              data-node-id="2:4721"
+            <p
+              className="css-668lj font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre"
+              data-node-id="2:4726"
             >
-              <div
-                className="content-stretch flex gap-[3px] items-center relative shrink-0"
-                data-node-id="2:4722"
-              >
-                <div
-                  className="relative shrink-0 size-[8px]"
-                  data-name="bxs:up-arrow"
-                  data-node-id="2:4723"
-                >
-                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                    <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
-                  </svg>
-                </div>
-                <p
-                  className="css-c8nvji font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
-                  data-node-id="2:4725"
-                >
-                  {monthlyChange.toFixed(1)}%
-                </p>
-              </div>
-              <p
-                className="css-668lj font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre"
-                data-node-id="2:4726"
-              >
-                {isDemoMode ? 'from last month' : 'total invested'}
-              </p>
-            </div>
+              Total invested
+            </p>
           </div>
           <div
             className="h-[71px] overflow-clip relative shrink-0 w-[112px]"
@@ -147,13 +128,13 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               className="absolute font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
               data-node-id="2:7538"
             >
-              {isDemoMode ? '+$12,180' : `+${formatCurrency(displayMetrics.totalInvested * (monthlyChange / 100))}`}
+              {isDemoMode ? '+1234.5 HBAR' : `+${formatHBAR(displayMetrics.investmentHistory[displayMetrics.investmentHistory.length - 1]?.amount - displayMetrics.investmentHistory[0]?.amount || 0)}`}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Current Value Card */}
+      {/* ROI Card */}
       <div
         className="bg-white h-full box-border content-stretch flex flex-col gap-[12px]  overflow-clip p-[16px] relative rounded-[12px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full"
         data-node-id="3:98663"
@@ -166,7 +147,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
             className="basis-0 css-9flwuj font-['Inter:Semi_Bold',_sans-serif] font-semibold grow leading-[1.4] min-h-px min-w-px not-italic relative shrink-0 text-[#0a0d14] text-[12px] tracking-[-0.12px]"
             data-node-id="3:98665"
           >
-            Current Value
+            ROI
           </p>
           <div
             className="overflow-clip relative shrink-0 size-[14px]"
@@ -207,7 +188,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                 className="css-wjv8op font-['Inter_Display:SemiBold',_sans-serif] leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[20px] text-nowrap whitespace-pre"
                 data-node-id="3:98670"
               >
-                {formatCurrency(displayMetrics.currentValue)}
+                {formatHBAR(displayMetrics.totalDividendsReceived || 0)}
               </p>
               <div
                 className="content-stretch flex gap-[4px] items-center relative shrink-0"
@@ -230,7 +211,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                     className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre"
                     data-node-id="3:98675"
                   >
-                    {valueProgressPercentage.toFixed(0)}%
+                    {displayMetrics.roi?.toFixed(2) || '0.00'}%
                   </p>
                 </div>
               </div>
@@ -240,51 +221,11 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               data-node-id="3:98676"
             >
               <p
-                className="css-67x1rm font-['Inter_Display:SemiBold',_sans-serif] relative shrink-0 text-[#2d9f75] text-[12px]"
-                data-node-id="3:98677"
-              >
-                {valueProgressPercentage.toFixed(0)}%
-              </p>
-              <p
                 className="css-imr5wn font-['Inter_Display:Medium',_sans-serif] relative shrink-0 text-[#868c98] text-[11px]"
                 data-node-id="3:98678"
               >
-                of goal
+                Return on Investment
               </p>
-            </div>
-          </div>
-          <div
-            className="relative rounded-[100px] shrink-0 w-[240px] h-[20px] group cursor-pointer"
-            data-node-id="3:98679"
-            style={{
-              background: "rgba(245, 245, 245, 0.01)",
-              boxShadow:
-                "0px 5px 5px -2.5px rgba(42, 51, 70, 0.03), 0px 0px 0px 1px rgba(0, 0, 0, 0.07)",
-              borderRadius: "100px",
-            }}
-          >
-            <div className="flex flex-row p-[5px_6px] gap-[5px] w-[240px] h-[20px]">
-              <div
-                className="flex flex-col p-0 gap-[10px] w-[228px] h-[10px] bg-[#F5F5F5] rounded-[100px] flex-none order-0 flex-grow-1 relative overflow-hidden group-hover:bg-[#EEEEEE] transition-all duration-300"
-                data-node-id="3:98680"
-              >
-                <div
-                  className="h-[10px] bg-[#48CAA1] rounded-[31px] flex-none order-0 flex-grow-0 relative transition-all duration-500 ease-out group-hover:bg-[#3AB08A] group-hover:scale-105 group-hover:shadow-lg"
-                  data-node-id="3:98681"
-                  style={{
-                    width: `${valueProgressPercentage}%`,
-                    boxShadow:
-                      "0px 2px 4px -2px rgba(45, 159, 117, 0.4), inset 0px 3px 4px rgba(255, 255, 255, 0.3)",
-                    animation: "progressFill 2s ease-out forwards",
-                  }}
-                />
-                {/* Animated shimmer effect on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-              </div>
-            </div>
-            {/* Tooltip on hover */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-              {valueProgressPercentage.toFixed(0)}% Complete
             </div>
           </div>
           <div
@@ -295,9 +236,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               className="basis-0 css-668lj font-['Inter:Medium',_sans-serif] font-medium grow leading-[1.5] min-h-px min-w-px not-italic relative shrink-0 text-[#868c98] text-[10px]"
               data-node-id="3:98683"
             >
-              {valueProgressPercentage >= 100 
-                ? "You've reached your value goal! 🎉"
-                : `You're currently at ${valueProgressPercentage.toFixed(0)}% of your value goal. Keep it up!`}
+              {formatHBAR(displayMetrics.totalDividendsReceived || 0)} made back from {formatHBAR(displayMetrics.totalInvested)} invested
             </p>
           </div>
         </div>
@@ -313,23 +252,11 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
         <div className="basis-0 content-stretch flex grow items-end justify-between min-h-px min-w-px relative shrink-0 w-[272px]">
           <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0">
             <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre">
-              {formatCurrency(displayMetrics.totalProfit)}
+              {formatHBAR(displayMetrics.totalProfit)}
             </p>
-            <div className="content-stretch flex gap-[4px] items-center relative shrink-0">
-              <div className="content-stretch flex gap-[3px] items-center relative shrink-0">
-                <div className="relative shrink-0 size-[8px]">
-                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                    <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
-                  </svg>
-                </div>
-                <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-[1.4] not-italic relative shrink-0 text-[#2d9f75] text-[12px] text-nowrap whitespace-pre">
-                  {monthlyChange.toFixed(1)}%
-                </p>
-              </div>
-              <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre">
-                dividends
-              </p>
-            </div>
+            <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre">
+              Available to claim
+            </p>
           </div>
           <div className="content-stretch flex gap-[2px] items-end relative shrink-0 w-[145px] pr-6">
             {profitChartData.length > 0 ? (
@@ -356,6 +283,10 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-[rgba(56,198,153,0.3)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                    </div>
+                    {/* Hover tooltip showing HBAR earned in that month */}
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      {formatHBAR(item.amount)}
                     </div>
                     <div className="box-border content-stretch flex gap-[10px] h-[12px] items-center justify-center px-[2px] py-0 relative rounded-[100px] shrink-0">
                       <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[10px] text-[rgba(134,140,152,0.7)] text-center text-nowrap">
