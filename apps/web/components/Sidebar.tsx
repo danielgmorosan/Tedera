@@ -7,7 +7,6 @@ import { useWallet } from "@/context/wallet-context";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink, LogOut } from "lucide-react";
-import Image from "next/image";
 
 const navData = [
   {
@@ -147,7 +146,7 @@ export default function Sidebar() {
             className={cn(
               "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 cursor-pointer overflow-hidden",
               "h-[36px]",
-              isExpanded ? "w-full mb-2 justify-start" : "size-[36px] justify-center mx-auto"
+              isExpanded ? "w-[36px] mb-2 justify-start" : "size-[36px] justify-center mx-auto"
             )}
             style={{
               transition: 'none',
@@ -155,14 +154,13 @@ export default function Sidebar() {
             data-name="Icons"
             data-node-id="3:26970"
           >
-          {/* Square Logo (Collapsed View) */}
+          {/* Square Logo - Always visible, aligned left when expanded */}
           <div
-            className="absolute inset-0 bg-[#080912] rounded-[8px] flex items-center justify-center pointer-events-none"
+            className="relative bg-[#080912] rounded-[8px] flex items-center justify-center pointer-events-none"
             style={{
-              opacity: isExpanded ? 0 : 1,
-              visibility: isExpanded ? 'hidden' : 'visible',
-              transition: 'opacity 0.2s ease-in-out, visibility 0.2s ease-in-out',
-              backfaceVisibility: 'hidden',
+              width: '36px',
+              height: '36px',
+              transition: 'none',
             }}
           >
             <svg
@@ -249,27 +247,6 @@ export default function Sidebar() {
             />
           </div>
 
-          {/* Tedera Logo (Expanded View) */}
-          <div
-            className="flex items-center"
-            style={{
-              opacity: isExpanded ? 1 : 0,
-              visibility: isExpanded ? 'visible' : 'hidden',
-              position: isExpanded ? 'static' : 'absolute',
-              inset: isExpanded ? 'auto' : 0,
-              transition: 'opacity 0.2s ease-in-out 0.1s, visibility 0.2s ease-in-out 0.1s',
-              backfaceVisibility: 'hidden',
-            }}
-          >
-            <Image
-              src="/logo/logo (1).svg"
-              alt="Tedera Logo"
-              width={204}
-              height={55}
-              className="h-[36px] w-auto object-contain"
-              priority
-            />
-          </div>
         </Link>
         </div>
 
@@ -392,10 +369,10 @@ export default function Sidebar() {
         <div className="h-0.5 w-full bg-gray-200 mb-3 mt-auto rounded-lg" />
 
         {/* Wallet Section */}
-        <div className={cn("w-full transition-all duration-300", !isExpanded && "flex justify-center")}>
+        <div className={cn("w-full transition-all duration-300 pb-6", !isExpanded && "flex justify-center")}>
           {isExpanded && account ? (
             <div className={cn(
-              "mb-3 p-3 bg-white rounded-lg border border-gray-200 space-y-3",
+              "p-3 bg-white rounded-lg border border-gray-200 space-y-3",
               "transition-opacity duration-300 ease-in-out",
               "opacity-100"
             )}>

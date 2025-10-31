@@ -158,16 +158,21 @@ export function PropertyCard({ property, onViewDetail }: PropertyCardProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-150">
-              <div>
-                <span className="text-2xl font-bold text-slate-900">
-                  {formatLargeHBAR(totalValue)}
-                </span>
-                <span className="text-sm text-slate-500 ml-2 font-medium">total value</span>
+            <div className="flex items-baseline justify-between pt-4 border-t border-slate-150 gap-4">
+              {/* Left Side: Value */}
+              <div className="flex flex-col min-w-0 flex-shrink">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl font-bold text-slate-900 leading-none">
+                    {formatLargeHBAR(totalValue)}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium whitespace-nowrap leading-none">total value</span>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-bold text-slate-900">{availablePercentage.toFixed(0)}% available</div>
-                <div className="text-xs text-slate-500 font-medium">{ownedPercentage.toFixed(0)}% owned</div>
+              
+              {/* Right Side: Percentages */}
+              <div className="flex flex-col items-end flex-shrink-0">
+                <div className="text-sm font-bold text-slate-900 whitespace-nowrap leading-tight">{availablePercentage.toFixed(0)}% available</div>
+                <div className="text-xs text-slate-500 font-medium whitespace-nowrap leading-tight mt-0.5">{ownedPercentage.toFixed(0)}% owned</div>
               </div>
             </div>
           </div>

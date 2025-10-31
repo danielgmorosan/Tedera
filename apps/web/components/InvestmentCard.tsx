@@ -180,33 +180,30 @@ export default function InvestmentCard({
 
         <div className={`${isMobile ? 'mb-2' : 'mb-3'} h-px w-full bg-gray-200`} />
 
-        <div className="mt-auto flex items-end justify-between">
-          <div 
-            className="flex items-baseline gap-2"
-            style={{
-              minWidth: 0,
-              flexShrink: 1,
-            }}
-          >
-            <span className={`${isMobile ? 'text-2xl' : 'text-xl'} font-semibold tracking-tight text-gray-900`}>
-              {value}
-            </span>
-            <span className={`${isMobile ? 'text-sm' : 'text-xs'} font-medium text-gray-500 whitespace-nowrap`}>
-              Total value
-            </span>
-          </div>
-          <div 
-            className="text-right flex-shrink-0"
-            style={{
-              textAlign: 'right',
-            }}
-          >
-            <p className={`${isMobile ? 'text-[12px]' : 'text-[11px]'} font-semibold text-gray-900 whitespace-nowrap`}>
-              {availability}
-            </p>
-            <p className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} font-medium leading-tight text-gray-500 whitespace-nowrap`}>
-              {ownership}
-            </p>
+        {/* Value and Ownership Section - Better aligned structure */}
+        <div className="mt-auto pt-3">
+          <div className="flex items-baseline justify-between gap-4">
+            {/* Left Side: Value */}
+            <div className="flex flex-col min-w-0 flex-shrink">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className={`${isMobile ? 'text-2xl' : 'text-xl'} font-semibold tracking-tight text-gray-900 leading-none`}>
+                  {value}
+                </span>
+                <span className={`${isMobile ? 'text-xs' : 'text-[10px]'} font-medium text-gray-500 whitespace-nowrap leading-none`}>
+                  Total value
+                </span>
+              </div>
+            </div>
+            
+            {/* Right Side: Percentages */}
+            <div className="flex flex-col items-end flex-shrink-0">
+              <p className={`${isMobile ? 'text-xs' : 'text-[11px]'} font-semibold text-gray-900 whitespace-nowrap leading-tight`}>
+                {availability}
+              </p>
+              <p className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} font-medium text-gray-500 whitespace-nowrap leading-tight mt-0.5`}>
+                {ownership}
+              </p>
+            </div>
           </div>
         </div>
       </div>
