@@ -3,10 +3,6 @@
 
 # Tedera - Decentralized RWA Marketplace
 
-Tedera is a decentralized marketplace for tokenized real-world assets (RWA), specifically focused on property investments. Built on Hedera using the Asset Tokenization Studio (ATS) for ERC-1400 compliant security tokens.
-
-# Tedera
-
 A decentralized marketplace for tokenizing real estate properties. Basically, you can buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools.
 
 
