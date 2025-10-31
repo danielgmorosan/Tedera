@@ -68,9 +68,9 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
   const maxProfit = Math.max(...profitChartData.map(d => d.amount || 0), 1);
 
   return (
-    <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px] h-full relative w-full min-w-0">
+    <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px] items-stretch relative w-full min-w-0">
       {/* Total Invested Card - Chart Only */}
-      <div className="bg-white box-border h-full content-stretch flex flex-col gap-[12px] overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full">
+      <div className="bg-white box-border content-stretch flex flex-col gap-[12px] overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)]">
         <div
           className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full"
         >
@@ -81,7 +81,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
           </p>
         </div>
         <div
-          className="flex-1 w-full h-full min-h-0 relative"
+          className="w-full h-[120px] min-h-0 relative"
         >
           {investmentChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -131,7 +131,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
 
       {/* ROI Card */}
       <div
-        className="bg-white h-full box-border content-stretch flex flex-col gap-[12px]  overflow-clip p-[16px] relative rounded-[12px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full"
+        className="bg-white box-border content-stretch flex flex-col gap-[12px] overflow-clip p-[16px] relative rounded-[12px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)]"
         data-node-id="3:98663"
       >
         <div
@@ -233,13 +233,13 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
       </div>
 
       {/* Available HBAR to Claim Card */}
-      <div className=" h-full bg-white box-border content-stretch flex flex-col gap-[16px] grow items-start min-h-px min-w-px overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] shrink-0">
+      <div className="bg-white box-border content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)]">
         <div className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full">
           <p className="basis-0 font-['Inter:Semi_Bold',_sans-serif] font-semibold grow leading-[1.4] min-h-px min-w-px not-italic relative shrink-0 text-[#0a0d14] text-[12px] tracking-[-0.12px]">
             Available HBAR to Claim
           </p>
         </div>
-        <div className="flex-1 content-stretch flex flex-col gap-4 grow min-h-0 relative shrink-0 w-full">
+        <div className="content-stretch flex flex-col gap-4 relative shrink-0 w-full">
           <div className="content-stretch flex flex-col gap-2 items-start relative shrink-0 w-full">
             <p className="font-['Inter:Medium',_sans-serif] font-medium leading-none not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre">
               {formatHBAR(displayMetrics.totalProfit)}
@@ -300,7 +300,7 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
 
       {/* Portfolio Overview Card - Live Data */}
       <div
-        className="bg-white h-full box-border content-stretch flex flex-col gap-[12px] items-start overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full"
+        className="bg-white box-border content-stretch flex flex-col gap-[12px] items-start overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)]"
       >
         <div
           className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full"
@@ -312,10 +312,10 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
           </p>
         </div>
         <div
-          className="flex-1 content-stretch flex flex-col gap-[10px] items-start min-w-0 relative shrink-0 w-full overflow-visible"
+          className="content-stretch flex flex-col gap-[10px] items-start min-w-0 relative shrink-0 w-full"
         >
           {/* Active Properties */}
-          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100 min-h-0 overflow-visible">
+          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100 overflow-visible">
             <div className="flex items-center justify-between mb-2">
               <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px] leading-tight whitespace-nowrap">
                 Active Properties
@@ -328,38 +328,6 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
             <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px] leading-tight whitespace-normal break-words">
               of {displayMetrics.totalHoldings || 0} total holdings
             </p>
-          </div>
-
-          {/* Portfolio Value Change */}
-          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100 min-h-0 overflow-visible">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px] leading-tight whitespace-nowrap">
-                Portfolio Value
-              </p>
-              {((displayMetrics.currentValue - displayMetrics.totalInvested) >= 0) ? (
-                <svg width="12" height="12" viewBox="0 0 8 8" fill="none" className="shrink-0">
-                  <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
-                </svg>
-              ) : (
-                <svg width="12" height="12" viewBox="0 0 8 8" fill="none" className="shrink-0">
-                  <path d="M4 7L6.5 4H1.5L4 7Z" fill="#d84e68" />
-                </svg>
-              )}
-            </div>
-            <p className="font-['Inter_Display:SemiBold',_sans-serif] font-semibold text-[#0a0d14] text-[20px] leading-tight mb-1 break-words">
-              {formatHBAR(displayMetrics.currentValue)}
-            </p>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className={`font-['Inter:Medium',_sans-serif] font-medium text-[10px] leading-tight whitespace-nowrap ${
-                (displayMetrics.currentValue - displayMetrics.totalInvested) >= 0 ? 'text-[#2d9f75]' : 'text-[#d84e68]'
-              }`}>
-                {(displayMetrics.currentValue - displayMetrics.totalInvested) >= 0 ? '+' : ''}
-                {formatHBAR(displayMetrics.currentValue - displayMetrics.totalInvested)}
-              </span>
-              <span className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px] leading-tight whitespace-nowrap">
-                from invested
-              </span>
-            </div>
           </div>
         </div>
       </div>
