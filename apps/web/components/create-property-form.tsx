@@ -48,7 +48,7 @@ interface CreatedProperty {
 export function CreatePropertyForm() {
   const { user, wallet, isAuthenticated, connectWallet } = useAuth()
   const { isConnected: hederaConnected, connect: connectHederaWallet, error: hederaError } = useHederaWallet()
-  const { account: walletAccount, provider: walletProvider, connect: connectMetaMask } = useWallet()
+  const { account: walletAccount, provider: walletProvider, connect: connectMetaMask, connecting } = useWallet()
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
     location: "",
@@ -473,8 +473,8 @@ export function CreatePropertyForm() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
-      {/* Authentication Status */}
-      {!isAuthenticated && (
+      {/* Wallet Connection Status */}
+      {!walletAccount && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -482,16 +482,16 @@ export function CreatePropertyForm() {
                 <Coins className="h-5 w-5 text-orange-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-orange-900">Authentication Required</h3>
+                <h3 className="font-semibold text-orange-900">Wallet Connection Required</h3>
                 <p className="text-sm text-orange-700">
-                  Please connect your wallet or log in to create a property.
+                  Please connect your wallet to create a property.
                 </p>
               </div>
               <Button 
-                onClick={() => connectWallet('metamask')}
+                onClick={() => connectMetaMask()}
                 className="bg-orange-600 hover:bg-orange-700"
               >
-                Connect Wallet
+                {connecting ? 'Connecting...' : 'Connect Wallet'}
               </Button>
             </div>
           </CardContent>
