@@ -188,8 +188,8 @@ async function getClaimableDividends(
       }
     }
     
-    // Convert from wei (HBAR) to human-readable format
-    const totalInHBAR = parseFloat(ethers.utils.formatEther(total));
+    // Convert from tinybars (8 decimals) to HBAR
+    const totalInHBAR = parseFloat(ethers.utils.formatUnits(total, 8));
     return totalInHBAR;
   } catch (error) {
     console.error(`Error fetching dividends for ${dividendContractAddress}:`, error);

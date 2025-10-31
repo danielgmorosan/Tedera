@@ -165,7 +165,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
           if (claimed) continue;
 
           const amt: ethers.BigNumber = await contract.getClaimableDividend(i, account);
-          console.log(`  Distribution ${i}: claimable=${ethers.utils.formatEther(amt)} HBAR`);
+          console.log(`  Distribution ${i}: claimable=${ethers.utils.formatUnits(amt, 8)} HBAR`);
           if (amt && !amt.isZero()) {
             total = total.add(amt);
           }
@@ -176,7 +176,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
         }
       }
 
-      const hbar = parseFloat(ethers.utils.formatEther(total));
+      const hbar = parseFloat(ethers.utils.formatUnits(total, 8));
       console.log(`✅ Total claimable for ${holding.name}: ${hbar} HBAR`);
       setLiveClaimable((prev) => ({ ...prev, [holding.id]: hbar }));
     } catch (error) {

@@ -11,8 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Switch } from "./ui/switch";
-import { Label } from "./ui/label";
 import { CalendarIcon } from "lucide-react";
 import { useAuth } from "../context/auth-context";
 import { useWallet } from "../context/wallet-context";
@@ -36,7 +34,7 @@ export default function PortfolioDashboard() {
   });
   const [exportSuccess, setExportSuccess] = useState(false);
   const [isExportActive, setIsExportActive] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const isDemoMode = false;
   const [holdings, setHoldings] = useState<PropertyHolding[]>([]);
   const [metrics, setMetrics] = useState<PortfolioMetrics>({
     totalInvested: 0,
@@ -48,10 +46,10 @@ export default function PortfolioDashboard() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch portfolio data when not in demo mode
+  // Fetch portfolio data
   useEffect(() => {
     async function loadPortfolio() {
-      if (isDemoMode || !walletAccount || !walletProvider) {
+      if (!walletAccount || !walletProvider) {
         return;
       }
 
@@ -70,7 +68,7 @@ export default function PortfolioDashboard() {
     }
 
     loadPortfolio();
-  }, [isDemoMode, walletAccount, walletProvider]);
+  }, [walletAccount, walletProvider]);
 
   // Get current date formatted as day of week, month day, year using date-fns
   const getCurrentDate = () => {
@@ -168,17 +166,7 @@ export default function PortfolioDashboard() {
           className="absolute border-[0px_0px_1px] border-[rgba(46,46,46,0.05)] border-solid inset-0 pointer-events-none"
         />
         <div className="basis-0 content-stretch flex gap-[8px] grow items-center min-h-px min-w-px relative shrink-0">
-          {/* Demo Mode Toggle */}
-          <div className="flex items-center gap-3 mr-4">
-            <Switch
-              id="demo-mode"
-              checked={isDemoMode}
-              onCheckedChange={setIsDemoMode}
-            />
-            <Label htmlFor="demo-mode" className="text-sm font-medium cursor-pointer">
-              {isDemoMode ? '🎭 Demo Mode' : '📊 Real Data'}
-            </Label>
-          </div>
+          
 
           <div className="overflow-clip relative shrink-0 size-[18px]">
             <svg
@@ -288,21 +276,21 @@ export default function PortfolioDashboard() {
         </div>
 
         {/* Metrics Cards */}
-        {isLoading && !isDemoMode ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
           </div>
         ) : (
-          <MetricsCards metrics={metrics} isDemoMode={isDemoMode} />
+          <MetricsCards metrics={metrics} isDemoMode={false} />
         )}
 
         {/* Holdings Table */}
-        {isLoading && !isDemoMode ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
           </div>
         ) : (
-          <HoldingsTable holdings={holdings} isDemoMode={isDemoMode} />
+          <HoldingsTable holdings={holdings} isDemoMode={false} />
         )}
       </div>
     </div>
