@@ -28,6 +28,8 @@ interface HoldingData {
   status: "sell" | "sold" | "hold";
   aiInsight: string;
   image: string;
+  claimableAmount?: number;
+  dividendContractAddress?: string;
 }
 
 interface HoldingsTableProps {
@@ -156,7 +158,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
     [claimDividend, getDistributionCount, toast]
   );
   // Convert PropertyHolding to HoldingData format
-  const realHoldings: (HoldingData & { dividendContractAddress?: string })[] = holdings.map((h) => ({
+  const realHoldings: HoldingData[] = holdings.map((h) => ({
     id: h.propertyId,
     name: h.propertyName,
     category: h.category,
@@ -174,6 +176,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
       : 'No dividends available yet',
     image: h.propertyImage,
     dividendContractAddress: h.dividendContractAddress,
+    claimableAmount: h.claimableDividends,
   }));
 
   const displayHoldings = isDemoMode ? mockHoldings : realHoldings;
@@ -296,8 +299,17 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                       />
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-[#0A0D14]">
-                        {holding.name}
+                      <div className="flex items-center gap-1 text-xs font-medium text-[#0A0D14]">
+                        <span>{holding.name}</span>
+                        <svg
+                          className={`transition-transform ${expanded[holding.id] ? 'rotate-180' : ''}`}
+                          width="10"
+                          height="10"
+                          viewBox="0 0 10 10"
+                          fill="none"
+                        >
+                          <path d="M5 7L2 3h6L5 7z" fill="#0A0D14" />
+                        </svg>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
                         <div className="w-2 h-2 bg-neutral-100 rounded-full flex items-center justify-center">
@@ -429,13 +441,19 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                         {holding.aiInsight}
                       </div>
                       <button
-                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition ${Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) > 0
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
-                          : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'}`}
-                        disabled={Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) <= 0 || claimingId === holding.id}
+                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition ${
+                          (holding.claimableAmount || 0) > 0
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                            : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
+                        }`}
+                        disabled={(holding.claimableAmount || 0) <= 0 || claimingId === holding.id}
                         onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
                       >
-                        {claimingId === holding.id ? "Claiming..." : "Claim rewards"}
+                        {claimingId === holding.id
+                          ? "Claiming..."
+                          : (holding.claimableAmount || 0) > 0
+                          ? `Claim ${holding.claimableAmount!.toFixed(4)} HBAR`
+                          : "Claim rewards"}
                       </button>
                     </div>
                   </div>
@@ -470,8 +488,17 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                 />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-[#0A0D14] mb-1">
-                  {holding.name}
+                <div className="flex items-center gap-1 text-sm font-medium text-[#0A0D14] mb-1">
+                  <span>{holding.name}</span>
+                  <svg
+                    className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                  >
+                    <path d="M5 7L2 3h6L5 7z" fill="#0A0D14" />
+                  </svg>
                 </div>
                 <div className="flex items-center gap-1 mb-2">
                   <div className="w-2 h-2 bg-neutral-100 rounded-full flex items-center justify-center">
@@ -561,13 +588,19 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                   </div>
                 </div>
                 <button
-                  className={`w-full inline-flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition ${Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) > 0
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
-                    : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'}`}
-                  disabled={Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) <= 0 || claimingId === holding.id}
+                  className={`w-full inline-flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition ${
+                    (holding.claimableAmount || 0) > 0
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                      : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
+                  }`}
+                  disabled={(holding.claimableAmount || 0) <= 0 || claimingId === holding.id}
                   onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
                 >
-                  {claimingId === holding.id ? "Claiming..." : "Claim rewards"}
+                  {claimingId === holding.id
+                    ? "Claiming..."
+                    : (holding.claimableAmount || 0) > 0
+                    ? `Claim ${holding.claimableAmount!.toFixed(4)} HBAR`
+                    : "Claim rewards"}
                 </button>
               </div>
             )}

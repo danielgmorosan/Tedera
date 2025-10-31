@@ -17,10 +17,11 @@ const PROPERTY_SALE_ABI = [
   'function saleActive() view returns (bool)',
 ];
 
-// DividendDistributor ABI (minimal interface)
+// DividendDistributor ABI (functions needed for read-only portfolio calculations)
 const DIVIDEND_DISTRIBUTOR_ABI = [
-  'function getClaimableDividends(address account) view returns (uint256)',
-  'function totalDividendsDistributed() view returns (uint256)',
+  'function getDistributionCount() view returns (uint256)',
+  'function hasClaimed(uint256 distributionId, address holder) view returns (bool)',
+  'function getClaimableDividend(uint256 distributionId, address holder) view returns (uint256)',
 ];
 
 export interface PropertyHolding {
@@ -144,8 +145,7 @@ async function getPropertySaleDetails(
 
 /**
  * Get claimable dividends for a user
- * TODO: Implement proper dividend fetching by iterating distributions
- * The contract has getClaimableDividend(distributionId, holder) not getClaimableDividends(address)
+ * Iterates through all distributions and sums up claimable amounts
  */
 async function getClaimableDividends(
   dividendContractAddress: string,
@@ -153,11 +153,44 @@ async function getClaimableDividends(
   provider: ethers.providers.Web3Provider | ethers.providers.Provider
 ): Promise<number> {
   try {
-    // Temporarily return 0 to prevent blocking portfolio display
-    // The contract method getClaimableDividends(address) doesn't exist
-    // We need to implement: get distribution count, then iterate and sum up claimable amounts
-    console.log(`⚠️ Dividend fetching not fully implemented for ${dividendContractAddress}`);
-    return 0;
+    const contract = new ethers.Contract(
+      dividendContractAddress,
+      DIVIDEND_DISTRIBUTOR_ABI,
+      provider
+    );
+    
+    // Get total number of distributions
+    const countBN = await contract.getDistributionCount();
+    const count = parseInt(countBN.toString(), 10);
+    
+    if (count === 0) {
+      return 0;
+    }
+    
+    // Iterate through all distributions and sum up unclaimed amounts
+    let total = ethers.BigNumber.from(0);
+    
+    for (let i = 0; i < count; i++) {
+      try {
+        // Check if user has already claimed this distribution
+        const claimed: boolean = await contract.hasClaimed(i, userAddress);
+        if (claimed) continue;
+        
+        // Get claimable amount for this distribution
+        const claimableBN: ethers.BigNumber = await contract.getClaimableDividend(i, userAddress);
+        if (claimableBN && !claimableBN.isZero()) {
+          total = total.add(claimableBN);
+        }
+      } catch (err) {
+        // Skip this distribution if there's an error (e.g., invalid distribution ID)
+        console.warn(`Error checking distribution ${i} for ${dividendContractAddress}:`, err);
+        continue;
+      }
+    }
+    
+    // Convert from wei (HBAR) to human-readable format
+    const totalInHBAR = parseFloat(ethers.utils.formatEther(total));
+    return totalInHBAR;
   } catch (error) {
     console.error(`Error fetching dividends for ${dividendContractAddress}:`, error);
     return 0;
