@@ -458,9 +458,8 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-medium text-[#2D9F75]">$</span>
-                  <span className="text-xs text-[#0A0D14]">
-                    {holding.yield}
+                  <span className="text-xs font-medium text-[#2D9F75]">
+                    {holding.yield}%
                   </span>
                 </div>
               </TableCell>
@@ -517,45 +516,131 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </TableCell>
             </TableRow>
             {isExpanded && (
-              <TableRow className="bg-neutral-50">
+              <TableRow className="bg-gradient-to-br from-slate-50/50 to-emerald-50/30">
                 <TableCell colSpan={10}>
-                  <div className="flex flex-col gap-3 p-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="text-xs text-gray-600">
-                        <div className="font-medium text-gray-900">Shares Owned</div>
-                        <div className="mt-1">{holding.sharesOwned}</div>
+                  <div className="flex flex-col gap-4 p-4">
+                    {/* Enhanced metrics grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M8 2L11 6H5L8 2Z" fill="#10B981" />
+                            </svg>
+                          </div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Shares Owned</div>
+                        </div>
+                        <div className="text-xl font-bold text-gray-900 mt-1">{holding.sharesOwned.toLocaleString()}</div>
                       </div>
-                      <div className="text-xs text-gray-600">
-                        <div className="font-medium text-gray-900">Value</div>
-                        <div className="mt-1">{formatHBAR(holding.value)}</div>
+                      
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100/50 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M8 1L10 5H6L8 1Z" fill="#3B82F6" />
+                            </svg>
+                          </div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Value</div>
+                        </div>
+                        <div className="text-xl font-bold text-blue-700 mt-1">{formatHBAR(holding.value)}</div>
                       </div>
-                      <div className="text-xs text-gray-600">
-                        <div className="font-medium text-gray-900">Yield</div>
-                        <div className="mt-1">{holding.yield}%</div>
+                      
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-purple-100/50 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M8 3L11 7H5L8 3Z" fill="#A855F7" />
+                            </svg>
+                          </div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Yield</div>
+                        </div>
+                        <div className="flex items-baseline gap-1 mt-1">
+                          <div className="text-xl font-bold text-purple-700">{holding.yield}%</div>
+                          <div className="text-sm text-gray-500">APY</div>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {formatHBAR((holding.value * holding.yield) / 100)} / year
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-amber-100/50 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M8 1L12 8L4 8L8 1Z" fill="#F59E0B" />
+                            </svg>
+                          </div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Gain/Loss</div>
+                        </div>
+                        <div className={`text-xl font-bold mt-1 flex items-center gap-1 ${
+                          holding.gainLoss.isGain ? 'text-emerald-600' : 'text-red-600'
+                        }`}>
+                          {holding.gainLoss.isGain ? (
+                            <svg width="12" height="12" viewBox="0 0 9 9" fill="none">
+                              <path d="M4.5 1L7 4H2L4.5 1Z" fill="#10B981" />
+                            </svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 9 9" fill="none" className="rotate-180">
+                              <path d="M4.5 1L7 4H2L4.5 1Z" fill="#EF4444" />
+                            </svg>
+                          )}
+                          {holding.gainLoss.percentage}%
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-xs text-[#0A0D14]">
-                        {claimableAmount > 0
-                          ? `${formatHBAR(claimableAmount)} available to claim`
-                          : 'No dividends available yet'}
+                    {/* Dividends section */}
+                    <div className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-lg p-4 border border-emerald-200/50">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                              <path d="M10 2L13 7H7L10 2Z" fill="#10B981" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-0.5">Available Dividends</div>
+                            <div className="text-base font-bold text-gray-900">
+                              {claimableAmount > 0
+                                ? formatHBAR(claimableAmount)
+                                : 'No dividends available yet'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-all shadow-sm hover:shadow-md ${
+                            claimableAmount > 0
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                              : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
+                          }`}
+                          disabled={claimableAmount <= 0 || claimingId === holding.id}
+                          onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
+                        >
+                          {claimingId === holding.id ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Claiming...
+                            </>
+                          ) : claimableAmount > 0 ? (
+                            <>
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 1L12 5H4L8 1Z" fill="currentColor" />
+                              </svg>
+                              Claim {formatHBAR(claimableAmount)}
+                            </>
+                          ) : (
+                            <>
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 1L12 5H4L8 1Z" fill="currentColor" />
+                              </svg>
+                              Claim Rewards
+                            </>
+                          )}
+                        </button>
                       </div>
-                      <button
-                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition ${
-                          claimableAmount > 0
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
-                            : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
-                        }`}
-                        disabled={claimableAmount <= 0 || claimingId === holding.id}
-                        onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
-                      >
-                        {claimingId === holding.id
-                          ? "Claiming..."
-                          : claimableAmount > 0
-                          ? `Claim ${formatHBAR(claimableAmount)}`
-                          : "Claim rewards"}
-                      </button>
                     </div>
                   </div>
                 </TableCell>
@@ -631,18 +716,24 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <div className="text-xs text-gray-600 mb-1">Shares Owned</div>
-                <div className="text-sm font-medium text-[#0A0D14]">{holding.sharesOwned}</div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-3 border border-emerald-100">
+                <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Shares Owned</div>
+                <div className="text-lg font-bold text-emerald-700">{holding.sharesOwned.toLocaleString()}</div>
               </div>
-              <div>
-                <div className="text-xs text-gray-600 mb-1">Value</div>
-                <div className="text-sm font-medium text-[#0A0D14]">{formatHBAR(holding.value)}</div>
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-100">
+                <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Value</div>
+                <div className="text-lg font-bold text-blue-700">{formatHBAR(holding.value)}</div>
               </div>
-              <div>
-                <div className="text-xs text-gray-600 mb-1">Yield</div>
-                <div className="text-sm font-medium text-[#0A0D14]">{holding.yield}%</div>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100 col-span-2">
+                <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Yield</div>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-lg font-bold text-purple-700">{holding.yield}%</div>
+                  <div className="text-xs text-gray-600">APY</div>
+                  <div className="ml-auto text-xs text-gray-600">
+                    {formatHBAR((holding.value * holding.yield) / 100)} / year
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -676,35 +767,80 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
             </div>
 
             {isExpanded && (
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
-                <div className="flex items-start gap-2">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="mt-0.5 flex-shrink-0">
-                    <path d="M5 1L8 4H2L5 1Z" fill="#0A0D14" />
-                  </svg>
-                  <div>
-                    <div className="text-xs font-medium text-gray-700 mb-1">Available Dividends</div>
-                    <div className="text-xs text-[#0A0D14]">
-                      {claimableAmount > 0
-                        ? `${formatHBAR(claimableAmount)} available to claim`
-                        : 'No dividends available yet'}
+              <div className="mt-4 space-y-4">
+                {/* Enhanced metrics grid for mobile */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-3 border border-emerald-100">
+                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Shares</div>
+                    <div className="text-base font-bold text-emerald-700">{holding.sharesOwned.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Value</div>
+                    <div className="text-base font-bold text-blue-700">{formatHBAR(holding.value)}</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100 col-span-2">
+                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Yield</div>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-base font-bold text-purple-700">{holding.yield}%</div>
+                      <div className="text-xs text-gray-600">APY</div>
+                      <div className="ml-auto text-xs text-gray-600">
+                        {formatHBAR((holding.value * holding.yield) / 100)} / year
+                      </div>
                     </div>
                   </div>
                 </div>
-                <button
-                  className={`w-full inline-flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition ${
-                    claimableAmount > 0
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
-                      : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
-                  }`}
-                  disabled={claimableAmount <= 0 || claimingId === holding.id}
-                  onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
-                >
-                  {claimingId === holding.id
-                    ? "Claiming..."
-                    : claimableAmount > 0
-                    ? `Claim ${formatHBAR(claimableAmount)}`
-                    : "Claim rewards"}
-                </button>
+
+                {/* Dividends section for mobile */}
+                <div className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-lg p-4 border border-emerald-200/50">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2L13 7H7L10 2Z" fill="#10B981" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Available Dividends</div>
+                      <div className="text-sm font-bold text-gray-900">
+                        {claimableAmount > 0
+                          ? formatHBAR(claimableAmount)
+                          : 'No dividends available yet'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    className={`w-full inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-all shadow-sm hover:shadow-md ${
+                      claimableAmount > 0
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                        : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'
+                    }`}
+                    disabled={claimableAmount <= 0 || claimingId === holding.id}
+                    onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
+                  >
+                    {claimingId === holding.id ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Claiming...
+                      </>
+                    ) : claimableAmount > 0 ? (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M8 1L12 5H4L8 1Z" fill="currentColor" />
+                        </svg>
+                        Claim {formatHBAR(claimableAmount)}
+                      </>
+                    ) : (
+                      <>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M8 1L12 5H4L8 1Z" fill="currentColor" />
+                        </svg>
+                        Claim Rewards
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
