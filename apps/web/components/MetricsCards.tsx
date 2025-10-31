@@ -69,96 +69,63 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
 
   return (
     <div className="content-stretch grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-[20px]  h-full relative  w-full">
-      {/* Total Invested Card */}
-      <div className="bg-white box-border h-full content-stretch flex flex-col gap-[12px]  overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full">
+      {/* Total Invested Card - Chart Only */}
+      <div className="bg-white box-border h-full content-stretch flex flex-col gap-[12px] overflow-clip p-[16px] relative rounded-[10px] shadow-[0px_0px_0px_1px_rgba(0,0,0,0.07),0px_10px_24px_-8px_rgba(42,51,70,0.03)] size-full">
         <div
           className="content-stretch flex gap-[10px] items-center justify-center relative shrink-0 w-full"
-          data-node-id="2:4715"
         >
           <p
-            className="basis-0 css-9flwuj font-['Inter:Semi_Bold',_sans-serif] font-semibold grow leading-[1.4] min-h-px min-w-px not-italic relative shrink-0 text-[#0a0d14] text-[12px] tracking-[-0.12px]"
-            data-node-id="2:4716"
+            className="basis-0 font-['Inter:Semi_Bold',_sans-serif] font-semibold grow leading-[1.4] min-h-px min-w-px not-italic relative shrink-0 text-[#0a0d14] text-[12px] tracking-[-0.12px]"
           >
             Total invested
           </p>
         </div>
         <div
-          className="basis-0 content-stretch flex gap-[16px] grow items-end min-h-px min-w-px relative shrink-0 w-full"
-          data-node-id="2:4718"
+          className="flex-1 w-full h-full min-h-0 relative"
         >
-          <div
-            className="basis-0 content-stretch flex flex-col gap-[8px] grow  justify-end min-h-px min-w-px relative shrink-0"
-            data-node-id="2:4719"
-          >
-            <p
-              className="css-k0nvzb font-['Inter:Semi_Bold',_sans-serif] font-medium leading-[1.2] not-italic relative shrink-0 text-[#0a0d14] text-[22px] text-nowrap whitespace-pre"
-              data-node-id="2:4720"
-            >
-              {formatHBAR(displayMetrics.totalInvested)}
-            </p>
-            <p
-              className="css-668lj font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] not-italic relative shrink-0 text-[#868c98] text-[12px] text-nowrap whitespace-pre"
-              data-node-id="2:4726"
-            >
-              Total invested
-            </p>
-          </div>
-          <div
-            className="h-[71px] overflow-visible relative shrink-0 w-[112px]"
-            data-node-id="2:4727"
-          >
-            {investmentChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={investmentChartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="investmentGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2d9f75" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#2d9f75" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#2d9f75"
-                    strokeWidth={2}
-                    fill="url(#investmentGradient)"
-                    dot={false}
-                    activeDot={{ r: 4, fill: '#2d9f75', stroke: '#fff', strokeWidth: 2 }}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    }}
-                    labelStyle={{
-                      color: '#868c98',
-                      fontSize: '10px',
-                      fontWeight: 500,
-                    }}
-                    formatter={(value: number) => formatHBAR(value)}
-                    cursor={{ stroke: '#2d9f75', strokeWidth: 1, strokeDasharray: '3 3' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
-                No data
-              </div>
-            )}
-            <p
-              className="absolute font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
-              data-node-id="2:7538"
-            >
-              {isDemoMode ? '+1234.5 HBAR' : (displayMetrics.investmentHistory && displayMetrics.investmentHistory.length > 0 
-                ? `+${formatHBAR((displayMetrics.investmentHistory[displayMetrics.investmentHistory.length - 1]?.amount || 0) - (displayMetrics.investmentHistory[0]?.amount || 0))}`
-                : '+0 HBAR')}
-            </p>
-          </div>
+          {investmentChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={investmentChartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="investmentGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2d9f75" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#2d9f75" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="amount"
+                  stroke="#2d9f75"
+                  strokeWidth={2}
+                  fill="url(#investmentGradient)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#2d9f75', stroke: '#fff', strokeWidth: 2 }}
+                  isAnimationActive={true}
+                  animationDuration={1000}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  }}
+                  labelStyle={{
+                    color: '#868c98',
+                    fontSize: '10px',
+                    fontWeight: 500,
+                  }}
+                  formatter={(value: number) => formatHBAR(value)}
+                  cursor={{ stroke: '#2d9f75', strokeWidth: 1, strokeDasharray: '3 3' }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-xs text-gray-400">
+              No data
+            </div>
+          )}
         </div>
       </div>
 
@@ -350,51 +317,51 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
           </p>
         </div>
         <div
-          className="basis-0 content-stretch flex flex-col gap-[10px] grow items-start min-h-px min-w-px relative shrink-0 w-full"
+          className="flex-1 content-stretch flex flex-col gap-[10px] items-start min-w-0 relative shrink-0 w-full overflow-visible"
         >
           {/* Active Properties */}
-          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px]">
+          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100 min-h-0 overflow-visible">
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px] leading-tight whitespace-nowrap">
                 Active Properties
               </p>
-              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse shrink-0"></div>
             </div>
-            <p className="font-['Inter_Display:SemiBold',_sans-serif] font-semibold text-[#0a0d14] text-[20px] leading-tight">
+            <p className="font-['Inter_Display:SemiBold',_sans-serif] font-semibold text-[#0a0d14] text-[20px] leading-tight mb-1">
               {displayMetrics.activeProperties || 0}
             </p>
-            <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px] mt-0.5">
+            <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px] leading-tight whitespace-normal break-words">
               of {displayMetrics.totalHoldings || 0} total holdings
             </p>
           </div>
 
           {/* Portfolio Value Change */}
-          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px]">
+          <div className="bg-[#f7f7f7] w-full rounded-[8px] p-3 border border-gray-100 min-h-0 overflow-visible">
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[11px] leading-tight whitespace-nowrap">
                 Portfolio Value
               </p>
               {((displayMetrics.currentValue - displayMetrics.totalInvested) >= 0) ? (
-                <svg width="12" height="12" viewBox="0 0 8 8" fill="none">
+                <svg width="12" height="12" viewBox="0 0 8 8" fill="none" className="shrink-0">
                   <path d="M4 1L6.5 4H1.5L4 1Z" fill="#2d9f75" />
                 </svg>
               ) : (
-                <svg width="12" height="12" viewBox="0 0 8 8" fill="none">
+                <svg width="12" height="12" viewBox="0 0 8 8" fill="none" className="shrink-0">
                   <path d="M4 7L6.5 4H1.5L4 7Z" fill="#d84e68" />
                 </svg>
               )}
             </div>
-            <p className="font-['Inter_Display:SemiBold',_sans-serif] font-semibold text-[#0a0d14] text-[20px] leading-tight">
+            <p className="font-['Inter_Display:SemiBold',_sans-serif] font-semibold text-[#0a0d14] text-[20px] leading-tight mb-1 break-words">
               {formatHBAR(displayMetrics.currentValue)}
             </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className={`font-['Inter:Medium',_sans-serif] font-medium text-[10px] ${
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`font-['Inter:Medium',_sans-serif] font-medium text-[10px] leading-tight whitespace-nowrap ${
                 (displayMetrics.currentValue - displayMetrics.totalInvested) >= 0 ? 'text-[#2d9f75]' : 'text-[#d84e68]'
               }`}>
                 {(displayMetrics.currentValue - displayMetrics.totalInvested) >= 0 ? '+' : ''}
                 {formatHBAR(displayMetrics.currentValue - displayMetrics.totalInvested)}
               </span>
-              <span className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px]">
+              <span className="font-['Inter:Medium',_sans-serif] font-medium text-[#868c98] text-[10px] leading-tight whitespace-nowrap">
                 from invested
               </span>
             </div>

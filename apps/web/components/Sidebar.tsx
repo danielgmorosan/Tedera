@@ -7,6 +7,7 @@ import { useWallet } from "@/context/wallet-context";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Copy, ExternalLink, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const navData = [
   {
@@ -118,27 +119,37 @@ export default function Sidebar() {
   };
 
   return (
-    <div 
+    <motion.div 
       className={cn(
         "flex flex-col items-start relative bg-gray-100 overflow-hidden",
-        "h-full",
-        isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
+        "h-full"
       )}
+      initial={false}
+      animate={{
+        width: isExpanded ? 240 : 80,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+        mass: 0.5,
+      }}
       style={{
-        width: isExpanded ? '240px' : '80px',
-        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: 'width',
-        backfaceVisibility: 'hidden',
+        minWidth: isExpanded ? '240px' : '80px',
       }}
     >
-      <div className={cn(
-        "box-border flex-1 w-full flex flex-col gap-[8px]",
-        isExpanded ? "items-start px-4" : "items-center px-4"
-      )}
-      style={{
-        transition: 'opacity 0.3s ease-in-out',
-        willChange: 'contents',
-      }}>
+      <motion.div 
+        className={cn(
+          "box-border flex-1 w-full flex flex-col gap-[8px]",
+          isExpanded ? "items-start px-4" : "items-center px-4"
+        )}
+        layout
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+        }}
+      >
         {/* Logo - positioned lower with padding-top */}
         <div className="pt-4">
           <Link
@@ -248,16 +259,28 @@ export default function Sidebar() {
           </div>
           
           {/* Tedera text - Only visible when expanded */}
-          {isExpanded && (
-            <span 
-              className="text-black font-semibold text-base leading-none whitespace-nowrap"
-              style={{
-                fontFamily: 'Inter, sans-serif',
-              }}
-            >
-              Tedera
-            </span>
-          )}
+          <AnimatePresence mode="wait">
+            {isExpanded && (
+              <motion.span
+                key="tedera-text"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  delay: 0.1,
+                }}
+                className="text-black font-semibold text-base leading-none whitespace-nowrap"
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Tedera
+              </motion.span>
+            )}
+          </AnimatePresence>
 
         </Link>
         </div>
@@ -347,14 +370,28 @@ export default function Sidebar() {
               <span className={cn("flex-shrink-0", isExpanded && "w-[18px] h-[18px]")}>
                 {getDynamicIcon()}
               </span>
-              {isExpanded && (
-                <span className={cn(
-                  "text-sm font-medium whitespace-nowrap transition-opacity duration-300",
-                  checkMatch ? "text-slate-900" : "text-slate-600"
-                )}>
-                  {item.name}
-                </span>
-              )}
+              <AnimatePresence mode="wait">
+                {isExpanded && (
+                  <motion.span
+                    key={`nav-text-${index}`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: index * 0.05,
+                    }}
+                    className={cn(
+                      "text-sm font-medium whitespace-nowrap",
+                      checkMatch ? "text-slate-900" : "text-slate-600"
+                    )}
+                  >
+                    {item.name}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </Link>
           );
         })}
@@ -369,13 +406,28 @@ export default function Sidebar() {
           aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
         >
           {isExpanded ? (
-            <>
-              <ChevronLeft className="h-4 w-4" />
-              <span className="text-xs font-medium">Collapse</span>
-            </>
+            <ChevronLeft className="h-4 w-4" />
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
+          <AnimatePresence mode="wait">
+            {isExpanded && (
+              <motion.span
+                key="collapse-text"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                }}
+                className="text-xs font-medium"
+              >
+                Collapse
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
 
         <div className="h-0.5 w-full bg-gray-200 mb-3 mt-auto rounded-lg" />
@@ -438,7 +490,7 @@ export default function Sidebar() {
             <WalletConnectButton />
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
