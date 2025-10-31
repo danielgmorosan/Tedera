@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDividendDistribution } from "@/hooks/use-dividend-distribution";
 import { useWallet } from "@/context/wallet-context";
 import { ethers } from "ethers";
+import { PieChart, Coins, TrendingUp, TrendingDown, Gift } from "lucide-react";
 
 interface HoldingData {
   id: string;
@@ -521,41 +522,38 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                   <div className="flex flex-col gap-4 p-4">
                     {/* Enhanced metrics grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Shares Owned */}
                       <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-2 mb-1">
                           <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M8 2L11 6H5L8 2Z" fill="#10B981" />
-                            </svg>
+                            <PieChart className="w-4 h-4 text-emerald-600" />
                           </div>
                           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Shares Owned</div>
                         </div>
-                        <div className="text-xl font-bold text-gray-900 mt-1">{holding.sharesOwned.toLocaleString()}</div>
+                        <div className="text-xl font-bold text-emerald-700 mt-1">{holding.sharesOwned.toLocaleString()}</div>
                       </div>
                       
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-blue-100/50 shadow-sm hover:shadow-md transition-all">
+                      {/* Value */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M8 1L10 5H6L8 1Z" fill="#3B82F6" />
-                            </svg>
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <Coins className="w-4 h-4 text-emerald-600" />
                           </div>
                           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Value</div>
                         </div>
-                        <div className="text-xl font-bold text-blue-700 mt-1">{formatHBAR(holding.value)}</div>
+                        <div className="text-xl font-bold text-emerald-700 mt-1">{formatHBAR(holding.value)}</div>
                       </div>
                       
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-purple-100/50 shadow-sm hover:shadow-md transition-all">
+                      {/* Yield */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M8 3L11 7H5L8 3Z" fill="#A855F7" />
-                            </svg>
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-emerald-600" />
                           </div>
                           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Yield</div>
                         </div>
                         <div className="flex items-baseline gap-1 mt-1">
-                          <div className="text-xl font-bold text-purple-700">{holding.yield}%</div>
+                          <div className="text-xl font-bold text-emerald-700">{holding.yield}%</div>
                           <div className="text-sm text-gray-500">APY</div>
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
@@ -563,26 +561,23 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                         </div>
                       </div>
                       
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-amber-100/50 shadow-sm hover:shadow-md transition-all">
+                      {/* Gain/Loss */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-emerald-100/50 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M8 1L12 8L4 8L8 1Z" fill="#F59E0B" />
-                            </svg>
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            {holding.gainLoss.isGain ? (
+                              <TrendingUp className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4 text-emerald-600" />
+                            )}
                           </div>
                           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Gain/Loss</div>
                         </div>
-                        <div className={`text-xl font-bold mt-1 flex items-center gap-1 ${
-                          holding.gainLoss.isGain ? 'text-emerald-600' : 'text-red-600'
-                        }`}>
+                        <div className="text-xl font-bold text-emerald-700 mt-1 flex items-center gap-1">
                           {holding.gainLoss.isGain ? (
-                            <svg width="12" height="12" viewBox="0 0 9 9" fill="none">
-                              <path d="M4.5 1L7 4H2L4.5 1Z" fill="#10B981" />
-                            </svg>
+                            <TrendingUp className="w-4 h-4" />
                           ) : (
-                            <svg width="12" height="12" viewBox="0 0 9 9" fill="none" className="rotate-180">
-                              <path d="M4.5 1L7 4H2L4.5 1Z" fill="#EF4444" />
-                            </svg>
+                            <TrendingDown className="w-4 h-4" />
                           )}
                           {holding.gainLoss.percentage}%
                         </div>
@@ -594,9 +589,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                              <path d="M10 2L13 7H7L10 2Z" fill="#10B981" />
-                            </svg>
+                            <Gift className="w-5 h-5 text-emerald-600" />
                           </div>
                           <div>
                             <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-0.5">Available Dividends</div>
@@ -771,17 +764,26 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                 {/* Enhanced metrics grid for mobile */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-3 border border-emerald-100">
-                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Shares</div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <PieChart className="w-4 h-4 text-emerald-600" />
+                      <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Shares</div>
+                    </div>
                     <div className="text-base font-bold text-emerald-700">{holding.sharesOwned.toLocaleString()}</div>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-100">
-                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Value</div>
-                    <div className="text-base font-bold text-blue-700">{formatHBAR(holding.value)}</div>
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-3 border border-emerald-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Coins className="w-4 h-4 text-emerald-600" />
+                      <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Value</div>
+                    </div>
+                    <div className="text-base font-bold text-emerald-700">{formatHBAR(holding.value)}</div>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100 col-span-2">
-                    <div className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Yield</div>
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-3 border border-emerald-100 col-span-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Yield</div>
+                    </div>
                     <div className="flex items-baseline gap-2">
-                      <div className="text-base font-bold text-purple-700">{holding.yield}%</div>
+                      <div className="text-base font-bold text-emerald-700">{holding.yield}%</div>
                       <div className="text-xs text-gray-600">APY</div>
                       <div className="ml-auto text-xs text-gray-600">
                         {formatHBAR((holding.value * holding.yield) / 100)} / year
@@ -794,9 +796,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                 <div className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-lg p-4 border border-emerald-200/50">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 2L13 7H7L10 2Z" fill="#10B981" />
-                      </svg>
+                      <Gift className="w-4 h-4 text-emerald-600" />
                     </div>
                     <div className="flex-1">
                       <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Available Dividends</div>
