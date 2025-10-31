@@ -3,44 +3,42 @@
 
 # Tedera - Decentralized RWA Marketplace
 
-A decentralized marketplace for tokenizing real estate properties. Basically, you can buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools. visit our website [Here](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing)
+A decentralized marketplace for tokenizing real estate properties. Tedera allows retail investors to buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools. visit our website [Here](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing)
 
 
 
 
 ## What it does
 
-Think of it like this: instead of buying a whole building, you can buy tokens that represent shares of that building. When the building makes money (rent, etc.), you get dividends proportional to how many tokens you own.
+Instead of buying a whole property, Tedera allows any investor to purchase tokens that represent shares of that property. When the property earns revenue (rent, etc.), investors receive dividends proportional to how many tokens they own.
 
 <img width="5760" height="3240" alt="how it works" src="https://github.com/user-attachments/assets/9f569fce-42ab-4615-b78f-b30f114b43c7" />
 
 **The main features:**
-- Create and deploy property tokens using Hedera's Asset Tokenization Studio (ATS)
-- Buy/sell shares on the marketplace
-- Automatic dividend distribution (profits get split among token holders)
-- Portfolio tracking to see all your investments in one place
+- Create and deploy property tokens using Hedera's Asset Tokenization Studio (For the Hackathon we ultimately had to find a different path because we couldn't make the SDK work reliably, but we will continue post-hacakathon)
+- Buy shares on the marketplace
+- Dividend distribution (profits get split among token holders)
+- Portfolio tracking to see all your investments in one place and claim dividends
 - Admin dashboard for property creators to manage everything
-
-We're using ERC-1400 compliant tokens, so it should work with standard tools and be regulatory-friendly.
 
 
 ## Tech stack
 
 **Frontend:**
-- Next.js 15 + React 18 (App Router)
-- TypeScript (because JavaScript hurts my soul)
-- Tailwind CSS + shadcn/ui components (looks decent without too much work)
+- Next.js 15 + React 18
+- TypeScript
+- Tailwind CSS + shadcn/ui components
 - Recharts for those nice-looking charts
 
 **Backend:**
-- Next.js API routes (keeps it simple)
-- MongoDB + Mongoose (Atlas free tier works fine for dev)
+- Next.js API routes
+- MongoDB + Mongoose
 - JWT for auth
 - Zod for validation
 
 **Blockchain:**
 - Hedera Hashgraph 
-- Asset Tokenization Studio SDK 
+- Asset Tokenization Studio SDK (to be integrated better soon)
 - Hardhat for contract development
 - Solidity ^0.8.20 with OpenZeppelin contracts 
 
@@ -62,7 +60,7 @@ Tedera/
 └── docs/                  # Deployment guide and other docs
 ```
 
-Pretty standard monorepo setup. The contracts live in a separate package so we can deploy them independently.
+Standard monorepo setup. The contracts live in a separate package so we can deploy them independently.
 
 ## Getting started
 
@@ -183,7 +181,7 @@ There's a more detailed deployment guide in `docs/DEPLOYMENT_GUIDE.md` if you ru
 
 ## Useful links
 
-- [Certificate](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing) - One Team member that taught us in practive
+- [Certificate](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing) - One Team member that taught us in private
 - [Pitch Deck](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing) - Learn more about our Full PLAN with Hedera
 - [Video](https://www.youtube.com/watch?v=u0k26k7moz4&t=186s) — Get some popcorn and enjoy!
 
