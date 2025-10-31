@@ -153,6 +153,7 @@ async function getPropertySaleDetails(
 /**
  * Get claimable dividends for a user
  * Iterates through all distributions and sums up claimable amounts
+ * OPTIMIZED: Parallelizes distribution checks for better performance
  */
 async function getClaimableDividends(
   dividendContractAddress: string,
@@ -174,24 +175,36 @@ async function getClaimableDividends(
       return 0;
     }
     
-    // Iterate through all distributions and sum up unclaimed amounts
-    let total = ethers.BigNumber.from(0);
-    
-    for (let i = 0; i < count; i++) {
+    // OPTIMIZATION: Check all distributions in parallel
+    const distributionPromises = Array.from({ length: count }, async (_, i) => {
       try {
-        // Check if user has already claimed this distribution
-        const claimed: boolean = await contract.hasClaimed(i, userAddress);
-        if (claimed) continue;
+        // Check if user has already claimed this distribution and get claimable amount in parallel
+        const [claimed, claimableBN] = await Promise.all([
+          contract.hasClaimed(i, userAddress),
+          contract.getClaimableDividend(i, userAddress).catch(() => ethers.BigNumber.from(0))
+        ]);
         
-        // Get claimable amount for this distribution
-        const claimableBN: ethers.BigNumber = await contract.getClaimableDividend(i, userAddress);
-        if (claimableBN && !claimableBN.isZero()) {
-          total = total.add(claimableBN);
+        // If already claimed or amount is zero, return null (will be filtered out)
+        if (claimed || !claimableBN || claimableBN.isZero()) {
+          return null;
         }
+        
+        return claimableBN;
       } catch (err) {
         // Skip this distribution if there's an error (e.g., invalid distribution ID)
         console.warn(`Error checking distribution ${i} for ${dividendContractAddress}:`, err);
-        continue;
+        return null;
+      }
+    });
+    
+    // Wait for all distribution checks to complete
+    const results = await Promise.all(distributionPromises);
+    
+    // Sum up all non-null claimable amounts
+    let total = ethers.BigNumber.from(0);
+    for (const result of results) {
+      if (result !== null && !result.isZero()) {
+        total = total.add(result);
       }
     }
     
@@ -206,6 +219,7 @@ async function getClaimableDividends(
 
 /**
  * Fetch user's complete portfolio
+ * OPTIMIZED: Processes properties in parallel for better performance
  */
 export async function fetchUserPortfolio(
   userAddress: string,
@@ -216,100 +230,105 @@ export async function fetchUserPortfolio(
     const properties = await fetchAllProperties();
     console.log('📦 Fetched properties from API:', properties.length);
     
-    // For each property, check if user has holdings
-    const holdings: PropertyHolding[] = [];
+    // OPTIMIZATION: Process all properties in parallel
+    const propertyPromises = properties.map(async (property) => {
+      try {
+        // Handle MongoDB _id field (it comes as _id, not id)
+        const propertyId = property._id || property.id;
+        
+        // Use correct field names from Property model
+        // Property model has: tokenAddress, evmTokenAddress (not tokenId)
+        // Check both tokenAddress and evmTokenAddress
+        const tokenAddress = property.tokenAddress || property.evmTokenAddress || property.tokenId;
+        
+        // Skip properties without required contract addresses
+        if (!tokenAddress || !property.saleContractAddress || !property.dividendContractAddress) {
+          console.log(`Skipping property ${property.name || 'Unknown'} - missing contract addresses`, {
+            hasTokenAddress: !!tokenAddress,
+            hasSaleContract: !!property.saleContractAddress,
+            hasDividendContract: !!property.dividendContractAddress
+          });
+          return null;
+        }
+
+        // OPTIMIZATION: Check balance first (early exit if user owns nothing)
+        const sharesOwned = await getTokenBalance(
+          tokenAddress,
+          userAddress,
+          provider
+        );
+        
+        console.log(`🔍 Property: ${property.name}, Token: ${tokenAddress}, User: ${userAddress}, Shares: ${sharesOwned}`);
+
+        // Early exit: Skip if user doesn't own any shares
+        if (sharesOwned === 0) return null;
+        
+        // OPTIMIZATION: Fetch sale details and dividends in parallel
+        const [saleDetails, claimableDividends] = await Promise.all([
+          getPropertySaleDetails(property.saleContractAddress, provider),
+          getClaimableDividends(property.dividendContractAddress, userAddress, provider)
+        ]);
+        
+        if (!saleDetails) {
+          console.log(`⚠️ Failed to get sale details for property ${property.name}`);
+          return null;
+        }
+        
+        // Calculate invested amount (shares owned × price per share) in HBAR
+        const investedAmount = sharesOwned * saleDetails.pricePerShare;
+        
+        // For now, current value = invested amount (no price appreciation yet)
+        // In a real system, you'd fetch current market price
+        const currentValue = investedAmount;
+        
+        // Calculate total dividends received for this property
+        // We'll fetch this in calculatePortfolioMetrics, for now set to 0
+        let totalDividendsReceived = 0;
+        
+        // Calculate gain/loss based on % of investment made back through dividends
+        // This will be updated in calculatePortfolioMetrics when we fetch distributions
+        const gainLossPercentage = investedAmount > 0 && totalDividendsReceived > 0
+          ? (totalDividendsReceived / investedAmount) * 100 
+          : 0;
+        
+        const holding: PropertyHolding = {
+          propertyId: String(propertyId),  // Ensure it's a string, handle _id
+          propertyName: property.name,
+          propertyImage: property.image || property.imageUrl || '/portfolio/building-img.png',  // Use 'image' field
+          location: property.location || '',
+          category: property.type || 'Real Estate',
+          tokenAddress: tokenAddress,  // Use corrected token address
+          saleContractAddress: property.saleContractAddress,
+          dividendContractAddress: property.dividendContractAddress,
+          sharesOwned,
+          totalShares: saleDetails.totalShares,
+          pricePerShare: saleDetails.pricePerShare,
+          currentValue,
+          investedAmount,
+          gainLoss: {
+            amount: totalDividendsReceived - investedAmount,
+            percentage: gainLossPercentage,
+            isGain: totalDividendsReceived >= 0,
+          },
+          expectedYield: parseFloat(property.expectedYield) || 0,
+          claimableDividends,
+          totalDividendsReceived, // Will be updated in calculatePortfolioMetrics
+          status: saleDetails.saleActive ? 'active' : 'sold',
+        };
+        
+        return holding;
+      } catch (error) {
+        // Log error but don't fail entire portfolio fetch
+        console.error(`Error processing property ${property.name || 'Unknown'}:`, error);
+        return null;
+      }
+    });
     
-    for (const property of properties) {
-      // Handle MongoDB _id field (it comes as _id, not id)
-      const propertyId = property._id || property.id;
-      
-      // Use correct field names from Property model
-      // Property model has: tokenAddress, evmTokenAddress (not tokenId)
-      // Check both tokenAddress and evmTokenAddress
-      const tokenAddress = property.tokenAddress || property.evmTokenAddress || property.tokenId;
-      
-      // Skip properties without required contract addresses
-      if (!tokenAddress || !property.saleContractAddress || !property.dividendContractAddress) {
-        console.log(`Skipping property ${property.name || 'Unknown'} - missing contract addresses`, {
-          hasTokenAddress: !!tokenAddress,
-          hasSaleContract: !!property.saleContractAddress,
-          hasDividendContract: !!property.dividendContractAddress
-        });
-        continue;
-      }
-
-      // Get user's token balance
-      const sharesOwned = await getTokenBalance(
-        tokenAddress,
-        userAddress,
-        provider
-      );
-      
-      console.log(`🔍 Property: ${property.name}, Token: ${tokenAddress}, User: ${userAddress}, Shares: ${sharesOwned}`);
-
-      // Skip if user doesn't own any shares
-      if (sharesOwned === 0) continue;
-      
-      // Get property sale details
-      const saleDetails = await getPropertySaleDetails(
-        property.saleContractAddress,
-        provider
-      );
-      
-      if (!saleDetails) {
-        console.log(`⚠️ Failed to get sale details for property ${property.name}`);
-        continue;
-      }
-      
-      // Get claimable dividends
-      const claimableDividends = await getClaimableDividends(
-        property.dividendContractAddress,
-        userAddress,
-        provider
-      );
-      
-      // Calculate invested amount (shares owned × price per share) in HBAR
-      const investedAmount = sharesOwned * saleDetails.pricePerShare;
-      
-      // For now, current value = invested amount (no price appreciation yet)
-      // In a real system, you'd fetch current market price
-      const currentValue = investedAmount;
-      
-      // Calculate total dividends received for this property
-      // We'll fetch this in calculatePortfolioMetrics, for now set to 0
-      let totalDividendsReceived = 0;
-      
-      // Calculate gain/loss based on % of investment made back through dividends
-      // This will be updated in calculatePortfolioMetrics when we fetch distributions
-      const gainLossPercentage = investedAmount > 0 && totalDividendsReceived > 0
-        ? (totalDividendsReceived / investedAmount) * 100 
-        : 0;
-      
-      holdings.push({
-        propertyId: String(propertyId),  // Ensure it's a string, handle _id
-        propertyName: property.name,
-        propertyImage: property.image || property.imageUrl || '/portfolio/building-img.png',  // Use 'image' field
-        location: property.location || '',
-        category: property.type || 'Real Estate',
-        tokenAddress: tokenAddress,  // Use corrected token address
-        saleContractAddress: property.saleContractAddress,
-        dividendContractAddress: property.dividendContractAddress,
-        sharesOwned,
-        totalShares: saleDetails.totalShares,
-        pricePerShare: saleDetails.pricePerShare,
-        currentValue,
-        investedAmount,
-        gainLoss: {
-          amount: totalDividendsReceived - investedAmount,
-          percentage: gainLossPercentage,
-          isGain: totalDividendsReceived >= 0,
-        },
-        expectedYield: parseFloat(property.expectedYield) || 0,
-        claimableDividends,
-        totalDividendsReceived, // Will be updated in calculatePortfolioMetrics
-        status: saleDetails.saleActive ? 'active' : 'sold',
-      });
-    }
+    // Wait for all properties to be processed
+    const results = await Promise.all(propertyPromises);
+    
+    // Filter out null results (properties user doesn't own or that failed)
+    const holdings = results.filter((holding): holding is PropertyHolding => holding !== null);
     
     console.log(`✅ Portfolio loaded: ${holdings.length} holdings found`);
     return holdings;
