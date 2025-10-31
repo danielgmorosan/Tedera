@@ -1,11 +1,12 @@
 import { ethers } from 'ethers';
 
-// ERC-1400 Token ABI (minimal interface for balance queries)
-const ERC1400_ABI = [
+// ERC-1400/ERC-20 Token ABI (minimal interface for balance queries)
+const ERC20_ABI = [
   'function balanceOf(address account) view returns (uint256)',
   'function totalSupply() view returns (uint256)',
   'function name() view returns (string)',
   'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
 ];
 
 // PropertySale ABI (minimal interface)
@@ -77,6 +78,7 @@ async function fetchAllProperties() {
 
 /**
  * Get user's holdings for a specific property token
+ * Returns balance in whole tokens (not wei) to avoid JavaScript number overflow
  */
 async function getTokenBalance(
   tokenAddress: string,
@@ -84,9 +86,19 @@ async function getTokenBalance(
   provider: ethers.providers.Web3Provider | ethers.providers.Provider
 ): Promise<number> {
   try {
-    const tokenContract = new ethers.Contract(tokenAddress, ERC1400_ABI, provider);
-    const balance = await tokenContract.balanceOf(userAddress);
-    return balance.toNumber();
+    const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+    
+    // Fetch balance and decimals in parallel
+    const [balanceRaw, decimals] = await Promise.all([
+      tokenContract.balanceOf(userAddress),
+      tokenContract.decimals().catch(() => 18), // Default to 18 if decimals() not available
+    ]);
+
+    // Convert from token wei (raw BigNumber) to whole tokens using formatUnits
+    // This prevents overflow when converting large values
+    const balanceInWholeTokens = parseFloat(ethers.utils.formatUnits(balanceRaw, decimals));
+    
+    return balanceInWholeTokens;
   } catch (error) {
     console.error(`Error fetching balance for token ${tokenAddress}:`, error);
     return 0;
@@ -95,6 +107,7 @@ async function getTokenBalance(
 
 /**
  * Get property sale contract details
+ * Converts all values from contract format (wei/token wei) to human-readable format
  */
 async function getPropertySaleDetails(
   saleContractAddress: string,
@@ -102,17 +115,25 @@ async function getPropertySaleDetails(
 ) {
   try {
     const saleContract = new ethers.Contract(saleContractAddress, PROPERTY_SALE_ABI, provider);
-    const [pricePerShare, totalShares, sharesSold, saleActive] = await Promise.all([
+    const [pricePerShareRaw, totalSharesRaw, sharesSoldRaw, saleActive] = await Promise.all([
       saleContract.pricePerShare(),
       saleContract.totalShares(),
       saleContract.sharesSold(),
       saleContract.saleActive(),
     ]);
 
+    // pricePerShare is in wei per whole token -> convert to HBAR units
+    const pricePerShare = parseFloat(ethers.utils.formatEther(pricePerShareRaw));
+
+    // totalShares and sharesSold are in token wei (18 decimals) -> convert to whole tokens
+    // This prevents overflow when converting large values
+    const totalShares = parseFloat(ethers.utils.formatUnits(totalSharesRaw, 18));
+    const sharesSold = parseFloat(ethers.utils.formatUnits(sharesSoldRaw, 18));
+
     return {
-      pricePerShare: parseFloat(ethers.utils.formatEther(pricePerShare)),
-      totalShares: totalShares.toNumber(),
-      sharesSold: sharesSold.toNumber(),
+      pricePerShare,
+      totalShares,
+      sharesSold,
       saleActive,
     };
   } catch (error) {
