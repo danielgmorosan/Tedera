@@ -128,7 +128,9 @@ export default function MetricsCards({ metrics, isDemoMode }: MetricsCardsProps)
               className="absolute font-['Inter:Medium',_sans-serif] font-medium leading-[1.4] left-[65px] not-italic text-[#2d9f75] text-[10px] text-nowrap top-[-2px] whitespace-pre"
               data-node-id="2:7538"
             >
-              {isDemoMode ? '+1234.5 HBAR' : `+${formatHBAR(displayMetrics.investmentHistory[displayMetrics.investmentHistory.length - 1]?.amount - displayMetrics.investmentHistory[0]?.amount || 0)}`}
+              {isDemoMode ? '+1234.5 HBAR' : (displayMetrics.investmentHistory && displayMetrics.investmentHistory.length > 0 
+                ? `+${formatHBAR((displayMetrics.investmentHistory[displayMetrics.investmentHistory.length - 1]?.amount || 0) - (displayMetrics.investmentHistory[0]?.amount || 0))}`
+                : '+0 HBAR')}
             </p>
           </div>
         </div>

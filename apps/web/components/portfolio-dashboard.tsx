@@ -40,9 +40,14 @@ export default function PortfolioDashboard() {
     totalInvested: 0,
     currentValue: 0,
     totalProfit: 0,
+    totalDividendsReceived: 0,
+    roi: 0,
     totalReturn: { amount: 0, percentage: 0 },
     totalHoldings: 0,
     activeProperties: 0,
+    monthlyProfit: [],
+    investmentHistory: [],
+    monthlyChange: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
 
