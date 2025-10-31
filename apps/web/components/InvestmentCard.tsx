@@ -70,7 +70,7 @@ export default function InvestmentCard({
     >
       {/* Image / Gallery */}
       {/* Image wrapper uses a 4:3 aspect ratio; adjust by swapping aspect-[4/3] utility if different needed */}
-      <div className="relative w-full overflow-hidden aspect-[4/3]">
+      <div className="relative w-full overflow-hidden aspect-[4/3] rounded-t-xl">
         <img
           src={currentImage}
           // Using title for alt as a simple accessible fallback

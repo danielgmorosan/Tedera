@@ -109,6 +109,14 @@ export async function POST(req: NextRequest) {
     const saleAddress = data.saleContractAddress;
     const dividendAddress = data.dividendContractAddress;
 
+    // Log image data for debugging
+    console.log('📥 Received property data:', {
+      name: data.name,
+      image: data.image,
+      images: data.images,
+      imageCount: data.images?.length || 0
+    });
+
     // Save to database
     const property = await Property.create({
       name: data.name,
@@ -137,6 +145,14 @@ export async function POST(req: NextRequest) {
       saleContractAddress: saleAddress,
       dividendContractAddress: dividendAddress,
       transactionId: tokenDeployment.transactionId,
+    });
+
+    console.log('✅ Property created:', {
+      id: property._id,
+      name: property.name,
+      image: property.image,
+      images: property.images,
+      imageCount: property.images?.length || 0
     });
 
     return NextResponse.json({ property }, { status: 201 });

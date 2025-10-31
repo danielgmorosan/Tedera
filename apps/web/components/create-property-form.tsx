@@ -365,6 +365,12 @@ export function CreatePropertyForm() {
         throw new Error('Authentication required. Please ensure your wallet is connected and you are authenticated.');
       }
       
+      console.log('📤 Sending property data with images:', {
+        image: mainImageUrl,
+        images: uploadedImageUrls,
+        imageCount: uploadedImageUrls.length
+      });
+
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {

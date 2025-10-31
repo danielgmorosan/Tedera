@@ -327,7 +327,14 @@ export function Marketplace() {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Fetched properties:', data.properties?.length || 0, 'properties');
-          console.log('📋 Properties:', data.properties);
+          // Log image data for debugging
+          data.properties?.forEach((p: any, i: number) => {
+            console.log(`Property ${i + 1} (${p.name}):`, {
+              image: p.image,
+              images: p.images,
+              imageCount: p.images?.length || 0
+            });
+          });
           setProperties(data.properties || []);
         } else {
           console.error('❌ Failed to fetch properties:', response.status, response.statusText);
@@ -927,6 +934,7 @@ export function Marketplace() {
                 <InvestmentCard
                   id={Number(property._id || property.id)}
                   image={property.image || "/placeholder.svg"}
+                  images={property.images || []}
                   location={property.location}
                   title={property.name}
                   description={property.description}
