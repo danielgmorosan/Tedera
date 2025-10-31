@@ -1,3 +1,6 @@
+
+<img width="5760" height="3240" alt="tedera cover" src="https://github.com/user-attachments/assets/1501a12b-7376-4efc-9871-bd9e3352021b" />
+
 # Tedera - Decentralized RWA Marketplace
 
 Tedera is a decentralized marketplace for tokenized real-world assets (RWA), specifically focused on property investments. Built on Hedera using the Asset Tokenization Studio (ATS) for ERC-1400 compliant security tokens.
@@ -6,11 +9,12 @@ Tedera is a decentralized marketplace for tokenized real-world assets (RWA), spe
 
 A decentralized marketplace for tokenizing real estate properties. Basically, you can buy fractional shares of properties on the blockchain and get paid dividends. Built on Hedera because we needed fast, cheap transactions and proper tokenization tools.
 
-> Originally built for a Hedera hackathon, but hey, it works! 
 
 ## What it does
 
 Think of it like this: instead of buying a whole building, you can buy tokens that represent shares of that building. When the building makes money (rent, etc.), you get dividends proportional to how many tokens you own.
+
+<img width="5760" height="3240" alt="how it works" src="https://github.com/user-attachments/assets/9f569fce-42ab-4615-b78f-b30f114b43c7" />
 
 **The main features:**
 - Create and deploy property tokens using Hedera's Asset Tokenization Studio (ATS)
@@ -181,8 +185,8 @@ There's a more detailed deployment guide in `docs/DEPLOYMENT_GUIDE.md` if you ru
 ## Useful links
 
 - [Certificate](https://drive.google.com/file/d/13VziEGjawholkYyVsXHKokvSPI2Z-Ir1/view?usp=sharing) - One Team member that taught us in practive
-- [Pitch Deck]([https://hashscan.io/testnet](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing)) - Learn more about our Full PLAN with Hedera
-- [Promo Video]([https://github.com/hashgraph/hedera-asset-tokenization](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing)) - Get some Popcorn and Enjoy
+- [Pitch Deck](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing) - Learn more about our Full PLAN with Hedera
+- [Promo Video](https://drive.google.com/drive/folders/1l9NxvKhz0b12IgSDog3lZPXV_gm-IC26?usp=sharing) - Get some Popcorn and Enjoy
 
 
 ## License
