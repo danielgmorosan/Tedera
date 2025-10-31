@@ -9,6 +9,19 @@ import { parsePagination, buildSkipLimit } from "@/app/../lib/api/pagination";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Allow": "GET, POST, OPTIONS",
+      // Same-origin calls don't require CORS, but this keeps preflight happy if triggered
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
+
 const createSchema = z.object({
   name: z.string().min(3),
   location: z.string().optional(),
