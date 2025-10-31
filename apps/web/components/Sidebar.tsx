@@ -121,37 +121,49 @@ export default function Sidebar() {
   return (
     <div 
       className={cn(
-        "flex flex-col items-start relative bg-gray-100 transition-all duration-300 ease-in-out overflow-hidden",
+        "flex flex-col items-start relative bg-gray-100 overflow-hidden",
         "h-full",
         isExpanded ? "w-[240px] min-w-[240px]" : "w-[80px] min-w-[80px]"
       )}
       style={{
-        transitionProperty: 'width',
-        transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        width: isExpanded ? '240px' : '80px',
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'width',
+        backfaceVisibility: 'hidden',
       }}
     >
       <div className={cn(
-        "box-border flex-1 w-full flex flex-col gap-[8px] transition-all duration-300",
+        "box-border flex-1 w-full flex flex-col gap-[8px]",
         isExpanded ? "items-start px-4" : "items-center px-4"
-      )}>
+      )}
+      style={{
+        transition: 'opacity 0.3s ease-in-out',
+        willChange: 'contents',
+      }}>
         {/* Logo - positioned lower with padding-top */}
         <div className="pt-4">
           <Link
             href="/"
             className={cn(
-              "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 transition-all duration-300 cursor-pointer overflow-hidden",
+              "relative rounded-[8px] shrink-0 flex items-center hover:opacity-90 cursor-pointer overflow-hidden",
               "h-[36px]",
               isExpanded ? "w-full mb-2 justify-start" : "size-[36px] justify-center mx-auto"
             )}
+            style={{
+              transition: 'none',
+            }}
             data-name="Icons"
             data-node-id="3:26970"
           >
           {/* Square Logo (Collapsed View) */}
           <div
-            className={cn(
-              "absolute inset-0 bg-[#080912] rounded-[8px] flex items-center justify-center transition-opacity duration-300 pointer-events-none",
-              isExpanded ? "opacity-0 invisible" : "opacity-100 visible"
-            )}
+            className="absolute inset-0 bg-[#080912] rounded-[8px] flex items-center justify-center pointer-events-none"
+            style={{
+              opacity: isExpanded ? 0 : 1,
+              visibility: isExpanded ? 'hidden' : 'visible',
+              transition: 'opacity 0.2s ease-in-out, visibility 0.2s ease-in-out',
+              backfaceVisibility: 'hidden',
+            }}
           >
             <svg
               width="22"
@@ -239,10 +251,15 @@ export default function Sidebar() {
 
           {/* Tedera Logo (Expanded View) */}
           <div
-            className={cn(
-              "flex items-center transition-all duration-300",
-              isExpanded ? "opacity-100 visible" : "opacity-0 invisible absolute inset-0"
-            )}
+            className="flex items-center"
+            style={{
+              opacity: isExpanded ? 1 : 0,
+              visibility: isExpanded ? 'visible' : 'hidden',
+              position: isExpanded ? 'static' : 'absolute',
+              inset: isExpanded ? 'auto' : 0,
+              transition: 'opacity 0.2s ease-in-out 0.1s, visibility 0.2s ease-in-out 0.1s',
+              backfaceVisibility: 'hidden',
+            }}
           >
             <Image
               src="/logo/logo (1).svg"

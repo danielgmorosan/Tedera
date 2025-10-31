@@ -890,7 +890,14 @@ export function Marketplace() {
             </div>
           </div>
         ) : (
-          <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
+          <div 
+            className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}
+            style={{
+              containIntrinsicSize: 'auto 500px',
+              textRendering: 'optimizeLegibility',
+              contain: 'layout style',
+            }}
+          >
           {paginatedProperties.map((property) => {
             // Helper function to format HBAR amounts
             const formatLargeHBAR = (amount: number): string => {

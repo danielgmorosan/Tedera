@@ -136,7 +136,13 @@ export default function InvestmentCard({
       </div>
 
       {/* Content */}
-      <div className={`flex flex-1 flex-col ${isMobile ? 'px-3 pt-2 pb-3' : 'px-4 pt-3 pb-4'}`}>
+      <div 
+        className={`flex flex-1 flex-col ${isMobile ? 'px-3 pt-2 pb-3' : 'px-4 pt-3 pb-4'}`}
+        style={{
+          textAlign: 'left',
+          direction: 'ltr',
+        }}
+      >
         <div className="flex flex-col gap-0.5">
           <p className={`${isMobile ? 'text-[11px]' : 'text-[10px]'} font-medium tracking-wide text-gray-500`}>
             {location}
@@ -175,19 +181,30 @@ export default function InvestmentCard({
         <div className={`${isMobile ? 'mb-2' : 'mb-3'} h-px w-full bg-gray-200`} />
 
         <div className="mt-auto flex items-end justify-between">
-          <div className="flex items-baseline gap-2">
+          <div 
+            className="flex items-baseline gap-2"
+            style={{
+              minWidth: 0,
+              flexShrink: 1,
+            }}
+          >
             <span className={`${isMobile ? 'text-2xl' : 'text-xl'} font-semibold tracking-tight text-gray-900`}>
               {value}
             </span>
-            <span className={`${isMobile ? 'text-sm' : 'text-xs'} font-medium text-gray-500`}>
+            <span className={`${isMobile ? 'text-sm' : 'text-xs'} font-medium text-gray-500 whitespace-nowrap`}>
               Total value
             </span>
           </div>
-          <div className="text-right">
-            <p className={`${isMobile ? 'text-[12px]' : 'text-[11px]'} font-semibold text-gray-900`}>
+          <div 
+            className="text-right flex-shrink-0"
+            style={{
+              textAlign: 'right',
+            }}
+          >
+            <p className={`${isMobile ? 'text-[12px]' : 'text-[11px]'} font-semibold text-gray-900 whitespace-nowrap`}>
               {availability}
             </p>
-            <p className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} font-medium leading-tight text-gray-500`}>
+            <p className={`${isMobile ? 'text-[10px]' : 'text-[9px]'} font-medium leading-tight text-gray-500 whitespace-nowrap`}>
               {ownership}
             </p>
           </div>
