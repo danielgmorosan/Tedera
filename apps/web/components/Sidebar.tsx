@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { WalletConnectButton } from "./wallet-connect-button";
 import { useWallet } from "@/context/wallet-context";
@@ -100,6 +100,14 @@ export default function Sidebar() {
   const account = walletContext?.account || null;
   const disconnect = walletContext?.disconnect || (() => {});
 
+  // Auto-collapse sidebar on navigation (replicates the smooth navigation behavior)
+  useEffect(() => {
+    if (isExpanded) {
+      setIsExpanded(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const copyAddress = () => {
     if (account) {
       navigator.clipboard.writeText(account);
@@ -129,10 +137,9 @@ export default function Sidebar() {
         width: isExpanded ? 240 : 80,
       }}
       transition={{
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-        mass: 0.5,
+        type: "tween",
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1], // cubic-bezier matching Wrapper transition
       }}
       style={{
         minWidth: isExpanded ? '240px' : '80px',
@@ -145,9 +152,9 @@ export default function Sidebar() {
         )}
         layout
         transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
+          type: "tween",
+          duration: 0.3,
+          ease: [0.4, 0, 0.2, 1],
         }}
       >
         {/* Logo - positioned lower with padding-top */}
@@ -267,10 +274,10 @@ export default function Sidebar() {
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 30,
-                  delay: 0.08,
+                  type: "tween",
+                  duration: 0.3,
+                  ease: [0.4, 0, 0.2, 1],
+                  delay: 0.05,
                   opacity: { duration: 0.15 },
                 }}
                 className="text-black font-semibold text-base leading-none whitespace-nowrap overflow-hidden"
@@ -363,9 +370,9 @@ export default function Sidebar() {
               key={index}
               layout
               transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 30,
+                type: "tween",
+                duration: 0.3,
+                ease: [0.4, 0, 0.2, 1],
               }}
             >
               <Link
@@ -384,9 +391,9 @@ export default function Sidebar() {
                     height: isExpanded ? 18 : 'auto',
                   }}
                   transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 30,
+                    type: "tween",
+                    duration: 0.3,
+                    ease: [0.4, 0, 0.2, 1],
                   }}
                 >
                   {getDynamicIcon()}
@@ -399,10 +406,10 @@ export default function Sidebar() {
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
                       transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 30,
-                        delay: index * 0.03,
+                        type: "tween",
+                        duration: 0.3,
+                        ease: [0.4, 0, 0.2, 1],
+                        delay: index * 0.02,
                         opacity: { duration: 0.15 },
                       }}
                       className={cn(
@@ -441,9 +448,9 @@ export default function Sidebar() {
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 30,
+                  type: "tween",
+                  duration: 0.3,
+                  ease: [0.4, 0, 0.2, 1],
                   opacity: { duration: 0.15 },
                 }}
                 className="text-xs font-medium whitespace-nowrap overflow-hidden"
