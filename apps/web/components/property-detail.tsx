@@ -54,6 +54,7 @@ interface Property {
   area?: string;
   established?: string;
   totalShares?: number;
+  availableShares?: number;
   pricePerShare?: number;
   lastDistribution?: string;
   nextDistribution?: string;
@@ -147,6 +148,25 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
   const sharesOwned = realOwnership
     ? realOwnership.sharesSold
     : (property.totalShares ? ((ownedPercentage / 100) * property.totalShares) : 0);
+
+  // Calculate total value in HBAR
+  const totalShares = property.totalShares || 1000;
+  const pricePerShare = property.pricePerShare || 0;
+  const totalValue = property.totalValue ?? (totalShares * pricePerShare);
+
+  // Helper function to format HBAR amounts
+  const formatLargeHBAR = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `${(amount / 1000000).toFixed(2)}M HBAR`.replace(/\.?0+$/, '');
+    } else if (amount >= 1000) {
+      return `${(amount / 1000).toFixed(2)}K HBAR`.replace(/\.?0+$/, '');
+    }
+    const rounded = Math.round(amount * 100) / 100;
+    if (rounded % 1 === 0) {
+      return `${Math.round(rounded)} HBAR`;
+    }
+    return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+  };
 
   const handleShare = async () => {
     const shareData = {
@@ -381,7 +401,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                     </div>
                     <div className="text-right ml-8">
                       <div className="text-3xl font-bold text-slate-900 mb-1">
-                        ${(property.totalValue / 1000000).toFixed(1)}M
+                        {formatLargeHBAR(totalValue)}
                       </div>
                       <div className="text-sm text-slate-500 font-medium">
                         Total Value

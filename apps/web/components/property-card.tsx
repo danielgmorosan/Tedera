@@ -11,13 +11,17 @@ interface Property {
   location: string
   type: "forest" | "solar" | "real-estate"
   image: string
-  availableSupply: number
+  availableSupply?: number // Deprecated - use totalShares and availableShares instead
   expectedYield: number
-  totalValue: number
+  totalValue?: number // Can be calculated from totalShares * pricePerShare
   tags: string[]
   description: string
-  status: "open" | "closed" // added status field
-  revenueGenerated: number | null // added revenue tracking
+  status: "open" | "closed"
+  revenueGenerated: number | null
+  // Real property data
+  totalShares?: number
+  availableShares?: number
+  pricePerShare?: number
 }
 
 interface PropertyCardProps {
@@ -37,10 +41,41 @@ const typeColors = {
   "real-estate": "text-blue-600",
 }
 
+// Helper function to format HBAR amounts
+const formatHBAR = (amount: number): string => {
+  const rounded = Math.round(amount * 100) / 100; // Round to 2 decimals
+  if (rounded % 1 === 0) {
+    return `${Math.round(rounded)} HBAR`;
+  }
+  // Format to 2 decimal places and remove trailing zeros
+  return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+};
+
+// Helper function to format large HBAR amounts
+const formatLargeHBAR = (amount: number): string => {
+  if (amount >= 1000000) {
+    return `${(amount / 1000000).toFixed(2)}M HBAR`.replace(/\.?0+$/, '');
+  } else if (amount >= 1000) {
+    return `${(amount / 1000).toFixed(2)}K HBAR`.replace(/\.?0+$/, '');
+  }
+  return formatHBAR(amount);
+};
+
 export function PropertyCard({ property, onViewDetail }: PropertyCardProps) {
   const Icon = typeIcons[property.type]
   const iconColor = typeColors[property.type]
-  const ownedPercentage = 100 - property.availableSupply
+  
+  // Calculate real values from property data
+  const totalShares = property.totalShares || 1000; // Default fallback
+  const availableShares = property.availableShares ?? property.totalShares ?? 1000;
+  const pricePerShare = property.pricePerShare || 0;
+  
+  // Calculate total value in HBAR
+  const totalValue = property.totalValue ?? (totalShares * pricePerShare);
+  
+  // Calculate real available and owned percentages
+  const availablePercentage = totalShares > 0 ? (availableShares / totalShares) * 100 : 100;
+  const ownedPercentage = totalShares > 0 ? ((totalShares - availableShares) / totalShares) * 100 : 0;
 
   return (
     <TooltipProvider>
@@ -87,7 +122,7 @@ export function PropertyCard({ property, onViewDetail }: PropertyCardProps) {
             {property.revenueGenerated && property.status === "closed" && (
               <div className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-emerald-50/50 rounded-xl p-4 border border-emerald-100 w-full">
                 <div className="flex items-center text-emerald-700">
-                  <span className="font-bold text-base">${property.revenueGenerated.toLocaleString()}</span>
+                  <span className="font-bold text-base">{formatLargeHBAR(property.revenueGenerated)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">
@@ -126,13 +161,13 @@ export function PropertyCard({ property, onViewDetail }: PropertyCardProps) {
             <div className="flex items-center justify-between pt-4 border-t border-slate-150">
               <div>
                 <span className="text-2xl font-bold text-slate-900">
-                  ${(property.totalValue / 1000000).toFixed(1)}M
+                  {formatLargeHBAR(totalValue)}
                 </span>
                 <span className="text-sm text-slate-500 ml-2 font-medium">total value</span>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold text-slate-900">{property.availableSupply}% available</div>
-                <div className="text-xs text-slate-500 font-medium">{100 - property.availableSupply}% owned</div>
+                <div className="text-sm font-bold text-slate-900">{availablePercentage.toFixed(0)}% available</div>
+                <div className="text-xs text-slate-500 font-medium">{ownedPercentage.toFixed(0)}% owned</div>
               </div>
             </div>
           </div>

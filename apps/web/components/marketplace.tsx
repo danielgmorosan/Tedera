@@ -426,8 +426,24 @@ export function Marketplace() {
 
   const handleViewDetail = (property: any) => {
     const apy = `${property.expectedYield || 8.5}% APY`;
-    const totalValue = property.totalShares * property.pricePerShare;
-    const value = `$${(totalValue / 1_000_000).toFixed(1)}M`;
+    const totalShares = property.totalShares || 1000;
+    const availableShares = property.availableShares ?? property.totalShares ?? 1000;
+    const pricePerShare = property.pricePerShare || 0;
+    const totalValue = totalShares * pricePerShare;
+    // Helper function to format HBAR amounts
+    const formatLargeHBAR = (amount: number): string => {
+      if (amount >= 1000000) {
+        return `${(amount / 1000000).toFixed(2)}M HBAR`.replace(/\.?0+$/, '');
+      } else if (amount >= 1000) {
+        return `${(amount / 1000).toFixed(2)}K HBAR`.replace(/\.?0+$/, '');
+      }
+      const rounded = Math.round(amount * 100) / 100;
+      if (rounded % 1 === 0) {
+        return `${Math.round(rounded)} HBAR`;
+      }
+      return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+    };
+    const value = formatLargeHBAR(totalValue);
     const category =
       property.type === "real-estate"
         ? "Real Estate"
@@ -436,9 +452,7 @@ export function Marketplace() {
         : property.type === "solar"
         ? "Energy"
         : "Other";
-    const availableShares = property.availableShares || property.totalShares || 1000;
-    const totalShares = property.totalShares || 1000;
-    const availablePercentage = (availableShares / totalShares) * 100;
+    const availablePercentage = totalShares > 0 ? (availableShares / totalShares) * 100 : 100;
     
     setSelectedProperty({
       ...property,
@@ -447,8 +461,9 @@ export function Marketplace() {
       availableSupply: availablePercentage,
       totalValue: totalValue,
       saleContractAddress: property.saleContractAddress,
-      totalShares: property.totalShares,
-      pricePerShare: property.pricePerShare,
+      totalShares: totalShares,
+      availableShares: availableShares,
+      pricePerShare: pricePerShare,
       status: property.status,
       images: property.images || [], // Pass images array
       type: property.type as "forest" | "solar" | "real-estate",
@@ -877,9 +892,26 @@ export function Marketplace() {
         ) : (
           <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
           {paginatedProperties.map((property) => {
+            // Helper function to format HBAR amounts
+            const formatLargeHBAR = (amount: number): string => {
+              if (amount >= 1000000) {
+                return `${(amount / 1000000).toFixed(2)}M HBAR`.replace(/\.?0+$/, '');
+              } else if (amount >= 1000) {
+                return `${(amount / 1000).toFixed(2)}K HBAR`.replace(/\.?0+$/, '');
+              }
+              const rounded = Math.round(amount * 100) / 100;
+              if (rounded % 1 === 0) {
+                return `${Math.round(rounded)} HBAR`;
+              }
+              return `${rounded.toFixed(2).replace(/\.?0+$/, '')} HBAR`;
+            };
+
             const apy = `${property.expectedYield || 8.5}% APY`;
-            const totalValue = property.totalShares * property.pricePerShare;
-            const value = `$${(totalValue / 1_000_000).toFixed(1)}M`;
+            const totalShares = property.totalShares || 1000;
+            const availableShares = property.availableShares ?? property.totalShares ?? 1000;
+            const pricePerShare = property.pricePerShare || 0;
+            const totalValue = totalShares * pricePerShare;
+            const value = formatLargeHBAR(totalValue);
             const category =
               property.type === "real-estate"
                 ? "Real Estate"
@@ -888,11 +920,10 @@ export function Marketplace() {
                 : property.type === "solar"
                 ? "Energy"
                 : "Other";
-            const availableShares = property.availableShares || property.totalShares || 1000;
-            const totalShares = property.totalShares || 1000;
-            const availablePercentage = (availableShares / totalShares) * 100;
+            const availablePercentage = totalShares > 0 ? (availableShares / totalShares) * 100 : 100;
+            const ownedPercentage = totalShares > 0 ? ((totalShares - availableShares) / totalShares) * 100 : 0;
             const availability = `${availablePercentage.toFixed(0)}% available`;
-            const ownership = `${(100 - availablePercentage).toFixed(0)}% owned`;
+            const ownership = `${ownedPercentage.toFixed(0)}% owned`;
             const status = property.status === "closed" || availableShares === 0 ? "Closed" : "Open";
             
             return (
@@ -905,8 +936,9 @@ export function Marketplace() {
                   availableSupply: availablePercentage,
                   totalValue: totalValue,
                   saleContractAddress: property.saleContractAddress,
-                  totalShares: property.totalShares,
-                  pricePerShare: property.pricePerShare,
+                  totalShares: totalShares,
+                  availableShares: availableShares,
+                  pricePerShare: pricePerShare,
                   status: property.status,
                   images: property.images || [], // Pass images array
                 })}
@@ -923,8 +955,9 @@ export function Marketplace() {
                       availableSupply: availablePercentage,
                       totalValue: totalValue,
                       saleContractAddress: property.saleContractAddress,
-                      totalShares: property.totalShares,
-                      pricePerShare: property.pricePerShare,
+                      totalShares: totalShares,
+                      availableShares: availableShares,
+                      pricePerShare: pricePerShare,
                       status: property.status,
                       images: property.images || [], // Pass images array
                     });
