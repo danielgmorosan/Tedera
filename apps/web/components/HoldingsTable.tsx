@@ -9,6 +9,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { PropertyHolding } from "@/lib/services/portfolioService";
+import React, { useCallback, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useDividendDistribution } from "@/hooks/use-dividend-distribution";
 
 interface HoldingData {
   id: string;
@@ -101,8 +104,59 @@ const mockHoldings: HoldingData[] = [
 ];
 
 export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTableProps) {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { getDistributionCount, claimDividend } = useDividendDistribution();
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  const handleClaimLatest = useCallback(
+    async (
+      holding: (HoldingData & { dividendContractAddress?: string })
+    ) => {
+      if (!holding.dividendContractAddress) {
+        toast({
+          title: "No dividend contract",
+          description: "Missing dividend distributor address.",
+          variant: "destructive",
+        });
+        return;
+      }
+      try {
+        setClaimingId(holding.id);
+        const count = await getDistributionCount(
+          holding.dividendContractAddress
+        );
+        if (!count || count <= 0) {
+          toast({ title: "Nothing to claim", description: "No distributions found yet." });
+          return;
+        }
+        const latestId = count - 1;
+        const txHash = await claimDividend(
+          holding.dividendContractAddress,
+          latestId
+        );
+        toast({
+          title: "Claim submitted",
+          description: `Tx: ${txHash.substring(0, 10)}...`,
+        });
+      } catch (err: any) {
+        toast({
+          title: "Claim failed",
+          description: err?.message || "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setClaimingId(null);
+      }
+    },
+    [claimDividend, getDistributionCount, toast]
+  );
   // Convert PropertyHolding to HoldingData format
-  const realHoldings: HoldingData[] = holdings.map((h) => ({
+  const realHoldings: (HoldingData & { dividendContractAddress?: string })[] = holdings.map((h) => ({
     id: h.propertyId,
     name: h.propertyName,
     category: h.category,
@@ -119,6 +173,7 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
       ? `${h.claimableDividends.toFixed(4)} HBAR dividends available to claim`
       : 'No dividends available yet',
     image: h.propertyImage,
+    dividendContractAddress: h.dividendContractAddress,
   }));
 
   const displayHoldings = isDemoMode ? mockHoldings : realHoldings;
@@ -217,8 +272,11 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
           </TableRow>
         </TableHeader>
         <TableBody>
-          {displayHoldings.map((holding) => (
-            <TableRow key={holding.id}>
+          {displayHoldings.map((holding) => {
+            const isExpanded = !!expanded[holding.id];
+            return (
+            <React.Fragment key={holding.id}>
+            <TableRow className="cursor-pointer" onClick={() => toggleExpanded(holding.id)}>
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Checkbox />
@@ -347,15 +405,55 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
                 </button>
               </TableCell>
             </TableRow>
-          ))}
+            {isExpanded && (
+              <TableRow className="bg-neutral-50">
+                <TableCell colSpan={10}>
+                  <div className="flex flex-col gap-3 p-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="text-xs text-gray-600">
+                        <div className="font-medium text-gray-900">Shares Owned</div>
+                        <div className="mt-1">{holding.sharesOwned}</div>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        <div className="font-medium text-gray-900">Current Value</div>
+                        <div className="mt-1">${holding.value.toLocaleString()}</div>
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        <div className="font-medium text-gray-900">Yield</div>
+                        <div className="mt-1">{holding.yield}%</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-[#0A0D14]">
+                        {holding.aiInsight}
+                      </div>
+                      <button
+                        className={`inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition ${Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) > 0
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                          : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'}`}
+                        disabled={Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) <= 0 || claimingId === holding.id}
+                        onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
+                      >
+                        {claimingId === holding.id ? "Claiming..." : "Claim rewards"}
+                      </button>
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+            </React.Fragment>
+            );})}
         </TableBody>
         </Table>
       </div>
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-4 p-4">
-        {displayHoldings.map((holding) => (
-          <div key={holding.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+        {displayHoldings.map((holding) => {
+          const isExpanded = !!expanded[holding.id];
+          return (
+          <div key={holding.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm" onClick={() => toggleExpanded(holding.id)}>
             <div className="flex items-start gap-3 mb-4">
               <div className="w-[30px] h-[30px] rounded-md overflow-hidden bg-gradient-to-br from-blue-400 to-green-400 flex-shrink-0">
                 <img
@@ -451,19 +549,30 @@ export default function HoldingsTable({ holdings, isDemoMode }: HoldingsTablePro
               </Badge>
             </div>
 
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-start gap-2">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="mt-0.5 flex-shrink-0">
-                  <path d="M5 1L8 4H2L5 1Z" fill="#0A0D14" />
-                </svg>
-                <div>
-                  <div className="text-xs font-medium text-gray-700 mb-1">AI Insight</div>
-                  <div className="text-xs text-[#0A0D14]">{holding.aiInsight}</div>
+            {isExpanded && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
+                <div className="flex items-start gap-2">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="mt-0.5 flex-shrink-0">
+                    <path d="M5 1L8 4H2L5 1Z" fill="#0A0D14" />
+                  </svg>
+                  <div>
+                    <div className="text-xs font-medium text-gray-700 mb-1">AI Insight</div>
+                    <div className="text-xs text-[#0A0D14]">{holding.aiInsight}</div>
+                  </div>
                 </div>
+                <button
+                  className={`w-full inline-flex items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition ${Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) > 0
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 border-transparent'
+                    : 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed'}`}
+                  disabled={Number(/\d+(\.\d+)?/.exec(holding.aiInsight || '')?.[0] || 0) <= 0 || claimingId === holding.id}
+                  onClick={(e) => { e.stopPropagation(); handleClaimLatest(holding as any); }}
+                >
+                  {claimingId === holding.id ? "Claiming..." : "Claim rewards"}
+                </button>
               </div>
-            </div>
+            )}
           </div>
-        ))}
+          );})}
       </div>
     </div>
   );
