@@ -18,11 +18,16 @@ import {
   AlertCircle,
   User,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Using our new wallet context
 import { useWallet } from "@/context/wallet-context";
 
-export function WalletConnectButton() {
+interface WalletConnectButtonProps {
+  isExpanded?: boolean;
+}
+
+export function WalletConnectButton({ isExpanded = false }: WalletConnectButtonProps) {
   const walletContext = useWallet();
   const [connectionError, setConnectionError] = useState("");
   
@@ -60,7 +65,10 @@ export function WalletConnectButton() {
 
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center gap-1 w-full">
+      <div className={cn(
+        "flex flex-col gap-1 w-full",
+        isExpanded ? "items-start" : "items-center"
+      )}>
         <Button
           onClick={handleConnect}
           disabled={connecting}

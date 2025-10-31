@@ -263,16 +263,17 @@ export default function Sidebar() {
             {isExpanded && (
               <motion.span
                 key="tedera-text"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
                 transition={{
                   type: "spring",
-                  stiffness: 300,
+                  stiffness: 400,
                   damping: 30,
-                  delay: 0.1,
+                  delay: 0.08,
+                  opacity: { duration: 0.15 },
                 }}
-                className="text-black font-semibold text-base leading-none whitespace-nowrap"
+                className="text-black font-semibold text-base leading-none whitespace-nowrap overflow-hidden"
                 style={{
                   fontFamily: 'Inter, sans-serif',
                 }}
@@ -358,41 +359,63 @@ export default function Sidebar() {
           };
           
           return (
-            <Link
+            <motion.div
               key={index}
-              href={item.route}
-              className={cn(
-                "border border-transparent hover:bg-slate-100 rounded-lg transition-all duration-200 flex items-center gap-3",
-                isExpanded ? "w-full px-3 py-2.5" : "size-9 grid place-items-center",
-                checkMatch && "bg-white border-gray-200"
-              )}
+              layout
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+              }}
             >
-              <span className={cn("flex-shrink-0", isExpanded && "w-[18px] h-[18px]")}>
-                {getDynamicIcon()}
-              </span>
-              <AnimatePresence mode="wait">
-                {isExpanded && (
-                  <motion.span
-                    key={`nav-text-${index}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30,
-                      delay: index * 0.05,
-                    }}
-                    className={cn(
-                      "text-sm font-medium whitespace-nowrap",
-                      checkMatch ? "text-slate-900" : "text-slate-600"
-                    )}
-                  >
-                    {item.name}
-                  </motion.span>
+              <Link
+                href={item.route}
+                className={cn(
+                  "border border-transparent hover:bg-slate-100 rounded-lg transition-colors duration-200 flex items-center",
+                  isExpanded ? "w-full px-3 py-2.5 gap-3" : "size-9 grid place-items-center gap-0",
+                  checkMatch && "bg-white border-gray-200"
                 )}
-              </AnimatePresence>
-            </Link>
+              >
+                <motion.span 
+                  className="flex-shrink-0"
+                  layout
+                  animate={{
+                    width: isExpanded ? 18 : 'auto',
+                    height: isExpanded ? 18 : 'auto',
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30,
+                  }}
+                >
+                  {getDynamicIcon()}
+                </motion.span>
+                <AnimatePresence mode="wait">
+                  {isExpanded && (
+                    <motion.span
+                      key={`nav-text-${index}`}
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                        delay: index * 0.03,
+                        opacity: { duration: 0.15 },
+                      }}
+                      className={cn(
+                        "text-sm font-medium whitespace-nowrap overflow-hidden",
+                        checkMatch ? "text-slate-900" : "text-slate-600"
+                      )}
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
+            </motion.div>
           );
         })}
 
@@ -414,15 +437,16 @@ export default function Sidebar() {
             {isExpanded && (
               <motion.span
                 key="collapse-text"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
                 transition={{
                   type: "spring",
-                  stiffness: 300,
+                  stiffness: 400,
                   damping: 30,
+                  opacity: { duration: 0.15 },
                 }}
-                className="text-xs font-medium"
+                className="text-xs font-medium whitespace-nowrap overflow-hidden"
               >
                 Collapse
               </motion.span>
@@ -433,10 +457,14 @@ export default function Sidebar() {
         <div className="h-0.5 w-full bg-gray-200 mb-3 mt-auto rounded-lg" />
 
         {/* Wallet Section */}
-        <div className={cn("w-full transition-all duration-300 pb-6", !isExpanded && "flex justify-center")}>
+        <div className={cn(
+          "w-full transition-all duration-300 pb-6",
+          !isExpanded && "flex justify-center",
+          isExpanded && !account && "flex justify-start"
+        )}>
           {isExpanded && account ? (
             <div className={cn(
-              "p-3 bg-white rounded-lg border border-gray-200 space-y-3",
+              "p-3 bg-white rounded-lg border border-gray-200 space-y-3 w-full",
               "transition-opacity duration-300 ease-in-out",
               "opacity-100"
             )}>
@@ -487,7 +515,7 @@ export default function Sidebar() {
               </button>
             </div>
           ) : (
-            <WalletConnectButton />
+            <WalletConnectButton isExpanded={isExpanded} />
           )}
         </div>
       </motion.div>
